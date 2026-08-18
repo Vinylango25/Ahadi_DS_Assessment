@@ -17,14 +17,17 @@ As a reminder: The technical assessment will consist of a timed assignment of no
 **Data Sources**
 1. Population Data
    You will work with [WorldPop](https://www.worldpop.org/) age- and sex-structured population data. The data are organized by country and are further segmented into age group and sex as GeoTIFF raster files.
-   For this exercise, use the 1km unconstrained resolution files from the Kenya directory.
+   For this exercise, use the **1km unconstrained resolution files** from the Kenya directory. (1km_ua/constrained)
    
 3. Administrative Boundaries
-   You will need district level boundaries to aggregate populatiopn data.
+   You will need district level boundaries to aggregate population data.
    Kenya GADM Level 2 (Counties):
-   Alternative direct GeoJSON: gadm41_KEN_2.geojson
+      **Kenya:** [gadm41_KEN_2.json.zip](https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_KEN_2.json.zip)
 
-   The data are in WGS 84 (EPSG:4326).
+These boundaries are in **WGS 84 (EPSG:4326)** and can be used for:
+- Extracting population totals per district
+- Building choropleth maps
+- Linking raster data with tabular summaries for dashboard visualization
 
 **Your Tasks**
 Part 1: Reproducible Data Pipeline
