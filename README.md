@@ -1,6 +1,6 @@
 # Test Guidance for Data Scientist Position
 
-Overview
+**Overview**
 Welcome to the AHADI Analytics technical assessment. This exercise is designed to assess your skills in building reproducible data pipelines, performing spatial analysis, creating interactive visualizations, and communicating insights for public health decision-making. You will work with real-world population data for Kenya, similar to the types of analyses you would conduct as a Data Scientist at AHADI.
 
 Submission: A GitHub repository containing all code, datasets, and documentation.
@@ -16,10 +16,10 @@ As a reminder: The technical assessment will consist of a timed assignment of no
 
 **Data Sources**
 1. Population Data
-   You will work with WorldPop 2025 age- and sex-structured population data. The data are organized by age group and sex as GeoTIFF raster files for Kenya.
-
+   You will work with [WorldPop](https://www.worldpop.org/) age- and sex-structured population data. The data are organized by country and are further segmented into age group and sex as GeoTIFF raster files.
    For this exercise, use the 1km unconstrained resolution files from the Kenya directory.
-2. Administrative Boundaries
+   
+3. Administrative Boundaries
    You will need district level boundaries to aggregate populatiopn data.
    Kenya GADM Level 2 (Counties):
    Alternative direct GeoJSON: gadm41_KEN_2.geojson
