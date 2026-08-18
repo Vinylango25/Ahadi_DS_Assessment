@@ -1,11 +1,11 @@
 # Test Guidance for Data Scientist Position
 
-**Overview**
+## Overview
 Welcome to the AHADI Analytics technical assessment. This exercise is designed to assess your skills in building reproducible data pipelines, performing spatial analysis, creating interactive visualizations, and communicating insights for public health decision-making. You will work with real-world population data for Kenya, similar to the types of analyses you would conduct as a Data Scientist at AHADI.
 
 Submission: A GitHub repository containing all code, datasets, and documentation.
 
-**Background**
+## Background
 The Kenyan Ministry of Health needs to understand the country's population age structure to plan health interventions. Children under 5 require routine immunizations, the working-age population represents the workforce and economic base, and the elderly have increasing chronic disease needs. Understanding these patterns at the county level is essential for equitable resource allocation.
 
 Your task is to process 2025 population projections for Kenya, create a clean analytical dataset, and build an interactive dashboard that allows policymakers to explore demographic patterns across all 47 counties.
@@ -14,7 +14,7 @@ While the tasks below are clearly defined, there is **room for creativity** in h
 Candidates who go beyond the basics—demonstrating **thoughtful exploration, clear reasoning, and effective visualization**—will receive additional credit. 
 As a reminder: The technical assessment will consist of a timed assignment of no longer than 3 hours: we are interested in seeing what you can accomplish in this time. It is not necessary to complete all of the assigned items.
 
-**Data Sources**
+## Data Sources 
 1. Population Data
    You will work with [WorldPop](https://www.worldpop.org/) age- and sex-structured population data. The data are organized by country and are further segmented into age group and sex as GeoTIFF raster files.
    For this exercise, use the **1km unconstrained resolution files** from the Kenya directory. (1km_ua/constrained)
@@ -29,8 +29,23 @@ These boundaries are in **WGS 84 (EPSG:4326)** and can be used for:
 - Building choropleth maps
 - Linking raster data with tabular summaries for dashboard visualization
 
-**Your Tasks**
-Part 1: Reproducible Data Pipeline
+## Your Tasks
+
+## Part 0. AI Use Disclosure (Required):
+If you used AI tools (ChatGPT, Claude, Copilot, etc.) please include a txt document in your final GitHub repository with the following information:
+
+- Specify which tools were used
+
+- Describe how they were used (e.g., "Used ChatGPT to help debug raster projection issues")
+
+- Provide a copy of any prompts submitted
+
+- Describe how you reviewed and validated AI-generated code
+
+- Note that using AI is allowed and encouraged as a coding aid - we want to see responsible use
+
+
+## Part 1: Reproducible Data Pipeline
 Create an automated, reproducible pipeline that takes in, processes and validates the population data for Kenya.
 
 Requirements:
@@ -84,6 +99,7 @@ For each county and age-sex combination:
 - Calculate total population per county for each age-sex group
 
 - Create Summary Demographic indicators:
+
        Children under 5: Sum of age groups 0-4 (both sexes)
    
        Working age (15-64): Sum of age groups 15-19 through 60-64 (both sexes)
@@ -148,22 +164,22 @@ Automated Summary Report - Generate a brief text or HTML report containing:
 
 Validation Log - A log file documenting:
 
-    All files processed
+ - All files processed
 
-    Any missing files or data issues
+ - Any missing files or data issues
 
-    Validation steps performed
+ - Validation steps performed
 
-    Decisions made for handling data quality issues
+ - Decisions made for handling data quality issues
 
 1.5 Environment Setup
 Include a way to recreate your environment:
 
-    Python: requirements.txt or environment.yml
+ - Python: requirements.txt or environment.yml
 
-    R: renv.lock or DESCRIPTION
+ - R: renv.lock or DESCRIPTION
 
-Part 2: Interactive Dashboard (2 hours)
+## Part 2: Interactive Dashboard (2 hours)
 
 Build a functional, user-friendly dashboard that allows exploration of Kenya's population data.
 Requirements:
@@ -171,19 +187,19 @@ Requirements:
 2.1 Dashboard Framework
 Choose one of these options:
 
-    Python: Streamlit, Dash, or Flask + Plotly
+ - Python: Streamlit, Dash, or Flask + Plotly
 
-    R: Shiny
+ - R: Shiny
 
 2.2 Required Features
 
 Filters (must work together):
 
-    County dropdown (optional - allows selecting specific counties for comparison)
+ - County dropdown (optional - allows selecting specific counties for comparison)
 
-    Sex toggle: Male, Female, or Total
+ - Sex toggle: Male, Female, or Total
 
-    Indicator dropdown: Choose which metric to display on the map:
+ - Indicator dropdown: Choose which metric to display on the map:
 
         Total Population
 
@@ -201,7 +217,7 @@ Filters (must work together):
 
 Visualizations (must update based on filters):
 
-    Choropleth Map (primary visualization):
+ - Choropleth Map (primary visualization):
 
         Display Kenya's counties colored by the selected indicator
 
@@ -211,7 +227,7 @@ Visualizations (must update based on filters):
 
         Click on a county to update other visualizations
 
-    Age Pyramid (secondary visualization):
+ - Age Pyramid (secondary visualization):
 
         Show population distribution by age group
 
@@ -221,7 +237,7 @@ Visualizations (must update based on filters):
 
         If multiple counties selected, show combined or stacked distribution
 
-    County Comparison Bar Chart:
+ - County Comparison Bar Chart:
 
         Compare selected counties (or top/bottom counties) on key indicators
 
@@ -229,7 +245,7 @@ Visualizations (must update based on filters):
 
         Show at least 3-5 counties for comparison
 
-    Summary Statistics Cards (dashboard header):
+ - Summary Statistics Cards (dashboard header):
 
         Total population (for selected county/countries)
 
@@ -244,9 +260,9 @@ Visualizations (must update based on filters):
 2.3 Public Health Context
 Include an "Interpretation" section on the dashboard that:
 
-    Explains the public health significance of dependency ratios
+ - Explains the public health significance of dependency ratios
 
-    Describes how age structure affects health service planning:
+ - Describes how age structure affects health service planning:
 
         High child population → need for immunization, pediatric care, nutrition programs
 
@@ -254,51 +270,49 @@ Include an "Interpretation" section on the dashboard that:
 
         High dependency ratio → economic implications for health financing
 
-    Suggests at least two policy implications based on the data patterns you observe
+ - Suggests at least two policy implications based on the data patterns you observe
 
-Part 3: Documentation and Software Engineering (1 hour)
+## Part 3: Documentation and Software Engineering (1 hour)
 
 3.1 Repository Structure
 Your GitHub repository should have a clear, organized structure. For example:
-text
-
-kenya-population-analysis/
-├── README.md
-├── requirements.txt                # or renv.lock
-├── .gitignore
-├── src/
-│   ├── __init__.py
-│   ├── pipeline.py                 # main pipeline script
-│   ├── data_access.py              # downloading/accessing data
-│   ├── validation.py               # data validation functions
-│   ├── aggregation.py              # raster aggregation to counties
-│   └── utils.py                    # helper functions
-├── dashboard/
-│   ├── app.py                      # dashboard entry point
-│   ├── components/                 # dashboard UI components
-│   └── assets/                     # CSS, images
-├── data/
-│   ├── raw/                        # (optional - for caching downloads)
-│   └── processed/
-│       ├── kenya_population_by_county.csv
-│       └── validation_log.txt
-├── outputs/
-│   ├── summary_report.html
-│   └── figures/                    # optional static figures
-└── tests/
-    ├── test_validation.py
-    └── test_aggregation.py
+      kenya-population-analysis/
+      ├── README.md
+      ├── requirements.txt                # or renv.lock
+      ├── .gitignore
+      ├── src/
+      │   ├── __init__.py
+      │   ├── pipeline.py                 # main pipeline script
+      │   ├── data_access.py              # downloading/accessing data
+      │   ├── validation.py               # data validation functions
+      │   ├── aggregation.py              # raster aggregation to counties
+      │   └── utils.py                    # helper functions
+      ├── dashboard/
+      │   ├── app.py                      # dashboard entry point
+      │   ├── components/                 # dashboard UI components
+      │   └── assets/                     # CSS, images
+      ├── data/
+      │   ├── raw/                        # (optional - for caching downloads)
+      │   └── processed/
+      │       ├── kenya_population_by_county.csv
+      │       └── validation_log.txt
+      ├── outputs/
+      │   ├── summary_report.html
+      │   └── figures/                    # optional static figures
+      └── tests/
+          ├── test_validation.py
+          └── test_aggregation.py
 
 3.2 README.md Requirements
 Your README must include:
 
-Project Description:
+1. Project Description:
 
 - Brief overview of what this project does
 
 - The public health context
 
-Setup Instructions:
+2. Setup Instructions:
 
 - How to clone the repository
 
@@ -306,26 +320,13 @@ Setup Instructions:
 
 - How to set up the environment (virtual environment, renv, etc.)
 
-Usage Instructions:
+3. Usage Instructions:
 
 - How to run the data pipeline (e.g., python src/pipeline.py or Rscript src/pipeline.R)
 
 - How to launch the dashboard (e.g., streamlit run dashboard/app.py or shiny::runApp())
 
 - Expected output location and format
-
-AI Use Disclosure (Required):
-If you used AI tools (ChatGPT, Claude, Copilot, etc.):
-
-- Specify which tools were used
-
-- Describe how they were used (e.g., "Used ChatGPT to help debug raster projection issues")
-
-- Provide 1-2 example prompts you used
-
-- Describe how you reviewed and validated AI-generated code
-
-- Note that using AI is allowed and encouraged as a coding aid - we want to see responsible use
 
 3.3 Code Quality
 
@@ -361,15 +362,17 @@ If you used AI tools (ChatGPT, Claude, Copilot, etc.):
 
         Documentation and cleanup
 
-Evaluation Criteria
+
+## Evaluation Criteria
 
 Your submission will be evaluated on the following criteria, aligned with the AHADI Data Scientist competencies:
-Competency	Weight	Excellent	Good	Needs Improvement
-Reproducible Pipeline	25%	Fully automated data access, comprehensive validation, efficient raster aggregation, clear logging	Mostly automated, good validation, works correctly	Manual steps, minimal validation, inefficient or broken
-Data Handling & Spatial Analysis	20%	Impeccable handling of missing data, correct CRS handling, efficient raster extraction	Handles main cases correctly, minor issues	Errors in aggregation, incorrect projections, data loss
-Dashboard & Visualization	25%	Polished, intuitive, all filters work, meaningful health context, professional appearance	Functional, clear visuals, minor usability issues	Broken features, confusing design, missing health context
-Code Quality & Documentation	15%	Modular, well-documented, clean structure, excellent README	Somewhat organized, adequate documentation	Spaghetti code, no comments, poor structure
-Communication & AI Use	15%	Clear AI disclosure, insightful health implications, professional presentation	Basic AI disclosure, clear presentation	Missing AI disclosure, unclear communication
+      |Competency|Weight|Excellent|Good|Needs Improvement|
+      |Communication & AI Use|15%|Clear AI disclosure, insightful health implications, professional presentation|Basic AI disclosure, clear presentation|Missing AI disclosure, unclear communication|
+      |Reproducible Pipeline|25%|Fully automated data access, comprehensive validation, efficient raster aggregation, clear logging|Mostly automated, good validation, works correctly|Manual steps, minimal validation, inefficient or broken|
+      |Data Handling & Spatial Analysis|20%|Impeccable handling of missing data, correct CRS handling, efficient raster extraction|Handles main cases correctly, minor issues|Errors in aggregation, incorrect projections, data loss|
+      |Dashboard & Visualization|25%|Polished, intuitive, all filters work, meaningful health context, professional appearance|Functional, clear visuals, minor usability issues|Broken features, confusing design, missing health context|
+      |Code Quality & Documentation|15%|Modular, well-documented, clean structure, excellent README|Somewhat organized, adequate documentation|Spaghetti code, no comments, poor structure|
+
 
 
 Resources and Tips
@@ -423,6 +426,9 @@ Data Access Tips:
 
 Reproducibility Tip:
 Include a script that checks your environment and installs required packages automatically. This demonstrates attention to reproducibility.
+
+_Tip:_ Focus on a **logical pipeline** and a **simple but effective dashboard**.
+We are interested in how you structure the workflow, design for scalability, and turn population data into clear, interpretable insights for decision-making.
 
 Submission Instructions
 
