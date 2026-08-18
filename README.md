@@ -151,11 +151,11 @@ Primary Dataset - A clean CSV file (kenya_population_by_county.csv) with columns
 
 Visualizations:
 
-      A map of 2025 at the raster level, specifying at least 1 age and sex group (your choice)
+ - A map of 2025 at the raster level, specifying at least 1 age and sex group (your choice)
 
-      A simple timeseries plot of total population for the time period 2021-2025 at the country level
+ - A simple timeseries plot of total population for the time period 2021-2025 at the country level
 
-      A scatterplot of children under 5 vs county size (county size can be roughly calculated via the geometry available in the json files)
+ - A scatterplot of children under 5 vs county size (county size can be roughly calculated via the geometry available in the json files)
 
 
 Validation Log - A log file documenting:
@@ -274,32 +274,34 @@ Include an "Interpretation" section on the dashboard that:
 
 3.1 Repository Structure
 Your GitHub repository should have a clear, organized structure. For example:
-      kenya-population-analysis/
-      ├── README.md
-      ├── requirements.txt                # or renv.lock
-      ├── .gitignore
-      ├── src/
-      │   ├── __init__.py
-      │   ├── pipeline.py                 # main pipeline script
-      │   ├── data_access.py              # downloading/accessing data
-      │   ├── validation.py               # data validation functions
-      │   ├── aggregation.py              # raster aggregation to counties
-      │   └── utils.py                    # helper functions
-      ├── dashboard/
-      │   ├── app.py                      # dashboard entry point
-      │   ├── components/                 # dashboard UI components
-      │   └── assets/                     # CSS, images
-      ├── data/
-      │   ├── raw/                        # (optional - for caching downloads)
-      │   └── processed/
-      │       ├── kenya_population_by_county.csv
-      │       └── validation_log.txt
-      ├── outputs/
-      │   ├── summary_report.html
-      │   └── figures/                    # optional static figures
-      └── tests/
-          ├── test_validation.py
-          └── test_aggregation.py
+```
+kenya-population-analysis/
+├── README.md
+├── requirements.txt                # or renv.lock
+├── .gitignore
+├── src/
+│   ├── __init__.py
+│   ├── pipeline.py                 # main pipeline script
+│   ├── data_access.py              # downloading/accessing data
+│   ├── validation.py               # data validation functions
+│   ├── aggregation.py              # raster aggregation to counties
+│   └── utils.py                    # helper functions
+├── dashboard/
+│   ├── app.py                      # dashboard entry point
+│   ├── components/                 # dashboard UI components
+│   └── assets/                     # CSS, images
+├── data/
+│   ├── raw/                        # (optional - for caching downloads)
+│   └── processed/
+│       ├── kenya_population_by_county.csv
+│       └── validation_log.txt
+├── outputs/
+│   ├── summary_report.html
+│   └── figures/                    # optional static figures
+└── tests/
+    ├── test_validation.py
+    └── test_aggregation.py
+```
 
 3.2 README.md Requirements
 Your README must include:
