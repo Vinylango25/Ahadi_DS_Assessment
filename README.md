@@ -17,7 +17,7 @@ As a reminder: The technical assessment will consist of a timed assignment of no
 ## Data Sources 
 1. Population Data
    You will work with [WorldPop](https://www.worldpop.org/) age- and sex-structured population data. The data are organized by country and are further segmented into age group and sex as GeoTIFF raster files.
-   For this exercise, use the **1km unconstrained resolution files** from the Kenya directory. (1km_ua/constrained)
+   For this exercise, use the **1km unconstrained resolution files for 2021-2025** from the Kenya directory. (1km_ua/constrained)
    
 3. Administrative Boundaries
    You will need district level boundaries to aggregate population data.
@@ -79,7 +79,7 @@ Spatial Validation:
 
 - Load a sample raster and verify its CRS
 
-- Reproject boundaries to match the raster CRS if needed (or vice versa)
+- Adjust boundaries to match the raster CRS if needed (or vice versa)
 
 - Verify that all counties are present and properly named
 
@@ -127,6 +127,8 @@ Primary Dataset - A clean CSV file (kenya_population_by_county.csv) with columns
 
     county: County name (as in GADM)
 
+    year
+
     total_population
 
     children_under_5
@@ -147,20 +149,14 @@ Primary Dataset - A clean CSV file (kenya_population_by_county.csv) with columns
 
     pct_elderly
 
+Visualizations:
 
-Automated Summary Report - Generate a brief text or HTML report containing:
+      A map of 2025 at the raster level, specifying at least 1 age and sex group (your choice)
 
-    Total population of Kenya
+      A simple timeseries plot of total population for the time period 2021-2025 at the country level
 
-    Top 5 most populous counties
+      A scatterplot of children under 5 vs county size (county size can be roughly calculated via the geometry available in the json files)
 
-    Top 5 counties with highest dependency ratio
-
-    Top 5 counties with highest child population proportion
-
-    Summary of data quality issues encountered and how they were handled
-
-    Basic statistics (mean, median, range) for key indicators
 
 Validation Log - A log file documenting:
 
@@ -197,6 +193,8 @@ Filters (must work together):
 
  - County dropdown (optional - allows selecting specific counties for comparison)
 
+ - Year
+
  - Sex toggle: Male, Female, or Total
 
  - Indicator dropdown: Choose which metric to display on the map:
@@ -215,7 +213,7 @@ Filters (must work together):
 
         Elderly Dependency Ratio
 
-Visualizations (must update based on filters):
+Visualizations (must update based on filters, visualize at least two of the following options):
 
  - Choropleth Map (primary visualization):
 
