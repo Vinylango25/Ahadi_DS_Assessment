@@ -35,56 +35,55 @@ Create an automated, reproducible pipeline that takes in, processes and validate
 
 Requirements:
 1.1 Programmatic Data Access
-    Write a script that automatically downloads or accesses the required files from the provided URL.
+- Write a script that automatically downloads or accesses the required files from the provided URL.
 
-    Your code should handle the directory listing or use the URL pattern to construct file paths.
+- Your code should handle the directory listing or use the URL pattern to construct file paths.
 
-    **Do not manually download individual files** - your code must programmatically access the data
+- **Do not manually download individual files** - your code must programmatically access the data
 
-    Use appropriate libraries for HTTP requests (e.g., requests in Python, curl in R)
+- Use appropriate libraries for HTTP requests (e.g., requests in Python, curl in R)
 
-    Implement caching to avoid re-downloading files during development
+- Implement caching to avoid re-downloading files during development
 
 1.2 Data Validation and Cleaning
 Your pipeline must handle intentional and realistic data inconsistencies:
 
 File Validation:
 
-    Programmatically identify all available GeoTIFF files in the Kenya directory
+- Programmatically identify all available GeoTIFF files in the Kenya directory
 
-    Parse the file names to extract age group and sex
+- Parse the file names to extract age group and sex
 
-    Verify that all expected age-sex combinations are present (both sexes for each age group)
+- Verify that all expected age-sex combinations are present (both sexes for each age group)
 
-    Log any missing files and decide how to handle them (e.g., impute or drop)
+- Log any missing files and decide how to handle them (e.g., impute or drop)
 
 Spatial Validation:
 
-    Load the administrative boundaries and verify they are in the correct CRS (EPSG:4326)
+- Load the administrative boundaries and verify they are in the correct CRS (EPSG:4326)
 
-    Load a sample raster and verify its CRS
+- Load a sample raster and verify its CRS
 
-    Reproject boundaries to match the raster CRS if needed (or vice versa)
+- Reproject boundaries to match the raster CRS if needed (or vice versa)
 
-    Verify that all counties are present and properly named
+- Verify that all counties are present and properly named
 
 Data Quality Checks:
 
-    Check for negative population values and handle appropriately
+- Check for negative population values and handle appropriately
 
-    Verify that population values are plausible (e.g., no zeros for populated areas)
+- Verify that population values are plausible (e.g., no zeros for populated areas)
 
-    Check for and log any unusual patterns
+- Check for and log any unusual patterns
 
 1.3 Spatial Aggregation
 For each county and age-sex combination:
 
-    Extract population values from the raster to each county polygon
+- Extract population values from the raster to each county polygon
 
-    Calculate total population per county for each age-sex group
+- Calculate total population per county for each age-sex group
 
-    Create Summary Demographic indicators:
-      
+- Create Summary Demographic indicators:
        Children under 5: Sum of age groups 0-4 (both sexes)
    
        Working age (15-64): Sum of age groups 15-19 through 60-64 (both sexes)
@@ -295,60 +294,60 @@ Your README must include:
 
 Project Description:
 
-    Brief overview of what this project does
+- Brief overview of what this project does
 
-    The public health context
+- The public health context
 
 Setup Instructions:
 
-    How to clone the repository
+- How to clone the repository
 
-    How to install dependencies (Python/R)
+- How to install dependencies (Python/R)
 
-    How to set up the environment (virtual environment, renv, etc.)
+- How to set up the environment (virtual environment, renv, etc.)
 
 Usage Instructions:
 
-    How to run the data pipeline (e.g., python src/pipeline.py or Rscript src/pipeline.R)
+- How to run the data pipeline (e.g., python src/pipeline.py or Rscript src/pipeline.R)
 
-    How to launch the dashboard (e.g., streamlit run dashboard/app.py or shiny::runApp())
+- How to launch the dashboard (e.g., streamlit run dashboard/app.py or shiny::runApp())
 
-    Expected output location and format
+- Expected output location and format
 
 AI Use Disclosure (Required):
 If you used AI tools (ChatGPT, Claude, Copilot, etc.):
 
-    Specify which tools were used
+- Specify which tools were used
 
-    Describe how they were used (e.g., "Used ChatGPT to help debug raster projection issues")
+- Describe how they were used (e.g., "Used ChatGPT to help debug raster projection issues")
 
-    Provide 1-2 example prompts you used
+- Provide 1-2 example prompts you used
 
-    Describe how you reviewed and validated AI-generated code
+- Describe how you reviewed and validated AI-generated code
 
-    Note that using AI is allowed and encouraged as a coding aid - we want to see responsible use
+- Note that using AI is allowed and encouraged as a coding aid - we want to see responsible use
 
 3.3 Code Quality
 
-    Use functions/classes to organize code logically
+- Use functions/classes to organize code logically
 
-    Include docstrings for all functions explaining inputs, outputs, and purpose
+- Include docstrings for all functions explaining inputs, outputs, and purpose
 
-    Add comments for non-obvious code sections
+- Add comments for non-obvious code sections
 
-    Follow a consistent style guide (PEP 8 for Python, tidyverse style for R)
+- Follow a consistent style guide (PEP 8 for Python, tidyverse style for R)
 
-    Use meaningful variable names
+- Use meaningful variable names
 
-    Handle errors gracefully with appropriate try-except blocks or condition checks
+- Handle errors gracefully with appropriate try-except blocks or condition checks
 
 3.4 Version Control
 
-    Use Git with clear, descriptive commit messages
+- Use Git with clear, descriptive commit messages
 
-    Show a logical progression of work (not just one big commit)
+- Show a logical progression of work (not just one big commit)
 
-    Commit at meaningful milestones:
+- Commit at meaningful milestones:
 
         Initial setup and structure
 
@@ -405,21 +404,21 @@ Python Libraries to Consider:
 
 General Tips:
 
-    Start simple: Get basic data loading and aggregation working before adding complexity
+- Start simple: Get basic data loading and aggregation working before adding complexity
 
-    Test with small data: Use a subset of age groups for initial development
+- Test with small data: Use a subset of age groups for initial development
 
-    Document as you go: Write notes about decisions and assumptions
+- Document as you go: Write notes about decisions and assumptions
 
-    Think about the user: Your dashboard should be intuitive for a Ministry of Health official
+- Think about the user: Your dashboard should be intuitive for a Ministry of Health official
 
-    Be explicit about assumptions: If you need to make assumptions (e.g., about missing data), state them clearly in your README
+- Be explicit about assumptions: If you need to make assumptions (e.g., about missing data), state them clearly in your README
 
-    Use version control: Commit frequently with meaningful messages
+- Use version control: Commit frequently with meaningful messages
 
 Data Access Tips:
 
-    The WorldPop directory may not support directory listing. You might need to construct URLs based on expected file patterns or use the full URL list if provided.
+- The WorldPop directory may not support directory listing. You might need to construct URLs based on expected file patterns or use the full URL list if provided.
 
 
 Reproducibility Tip:
@@ -427,15 +426,15 @@ Include a script that checks your environment and installs required packages aut
 
 Submission Instructions
 
-    Create a public GitHub repository for your work
+- Create a public GitHub repository for your work
 
-    Complete as many of the tasks described above as possible in a three hour period
+- Complete as many of the tasks described above as possible in a three hour period
 
-    Ensure your repository follows the structure outlined in Part 3.1
+- Ensure your repository follows the structure outlined in Part 3.1
 
-    Make sure your README is comprehensive and clear
+- Make sure your README is comprehensive and clear
 
-    Submit the repository URL through the provided submission form
+- Submit the repository URL through the provided submission form
 
 Good luck! We look forward to seeing your work.
 
