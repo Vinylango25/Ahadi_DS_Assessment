@@ -1,18 +1,21 @@
 # Test Guidance for Data Scientist Position
 
 ## Overview
-Welcome to the AHADI Analytics technical assessment. This exercise is designed to assess your skills in building reproducible data pipelines, performing spatial analysis, creating interactive visualizations, and communicating insights for public health decision-making. You will work with real-world population data for Kenya, similar to the types of analyses you would conduct as a Data Scientist at AHADI.
+Welcome to the AHADI technical assessment. This exercise is designed to assess your skills in building reproducible data pipelines, performing spatial analysis, creating interactive visualizations, and communicating insights for public health decision-making. You will work with real-world population data for Kenya, similar to the types of analyses you would conduct at AHADI.
 
 Submission: A GitHub repository containing all code, datasets, and documentation.
+
+Read all instructions carefully before beginning.
 
 ## Background
 The Kenyan Ministry of Health needs to understand the country's population age structure to plan health interventions. Children under 5 require routine immunizations, the working-age population represents the workforce and economic base, and the elderly have increasing chronic disease needs. Understanding these patterns at the county level is essential for equitable resource allocation.
 
-Your task is to process 2025 population projections for Kenya, create a clean analytical dataset, and build an interactive dashboard that allows policymakers to explore demographic patterns across all 47 counties.
+Your task is to process 2021-2025 population projections for Kenya, create a clean analytical dataset, and build an interactive dashboard that allows policymakers to explore demographic patterns across all 47 counties.
 
 While the tasks below are clearly defined, there is **room for creativity** in how you approach the analysis, present your results, and communicate your findings.
-Candidates who go beyond the basics—demonstrating **thoughtful exploration, clear reasoning, and effective visualization**—will receive additional credit. 
-As a reminder: The technical assessment will consist of a timed assignment of no longer than 3 hours: we are interested in seeing what you can accomplish in this time. It is not necessary to complete all of the assigned items.
+Candidates who go beyond the basics and demonstrate **thoughtful exploration, clear reasoning, and effective visualization** will receive additional credit. 
+
+As a reminder: The technical assessment will consist of a timed assignment of no longer than 3 hours: we are interested in seeing what you can accomplish in this time. It is not necessary to complete all of the assigned items. Fewer items completed at higher quality will be better scored than more items at poor quality.
 
 ## Data Sources 
 1. Population Data
@@ -42,7 +45,7 @@ If you used AI tools (ChatGPT, Claude, Copilot, etc.) please include a txt docum
 
 - Describe how you reviewed and validated AI-generated code
 
-- Note that using AI is allowed and encouraged as a coding aid - we want to see responsible use
+- Note that using AI is allowed: we want to see that you know how to use it responsibly
 
 
 ## Part 1: Reproducible Data Pipeline
@@ -50,7 +53,7 @@ Create an automated, reproducible pipeline that takes in, processes and validate
 
 Requirements:
 1.1 Programmatic Data Access
-- Write a script that automatically downloads or accesses the required files from the provided URL.
+- Write a script that automatically downloads or accesses the required population files from the provided URL.
 
 - Your code should handle the directory listing or use the URL pattern to construct file paths.
 
@@ -110,15 +113,15 @@ For each county and age-sex combination:
    
        Sex ratio: Male population / Female population * 100
    
-       Dependency ratio: (Children_under_5 + Elderly_65plus) / Working_age * 100
+       Dependency ratio: (children_under_5 + elderly_65plus) / working_age * 100
    
-       Child dependency ratio: Children_under_5 / Working_age * 100
+       Child dependency ratio: children_under_5 / working_age * 100
    
-       Elderly dependency ratio: Elderly_65plus / Working_age * 100
+       Elderly dependency ratio: elderly_65plus / working_age * 100
    
-       Proportion children: Children_under_5 / Total_population * 100
+       Proportion children: children_under_5 / total_population * 100
    
-       Proportion elderly: Elderly_65plus / Total_population * 100
+       Proportion elderly: elderly_65plus / total_population * 100
 
 1.4 Output Generation
 Your pipeline must produce:
@@ -175,7 +178,7 @@ Include a way to recreate your environment:
 
  - R: renv.lock or DESCRIPTION
 
-## Part 2: Interactive Dashboard (2 hours)
+## Part 2: Interactive Dashboard
 
 Build a functional, user-friendly dashboard that allows exploration of Kenya's population data.
 Requirements:
@@ -270,7 +273,7 @@ Include an "Interpretation" section on the dashboard that:
 
  - Suggests at least two policy implications based on the data patterns you observe
 
-## Part 3: Documentation and Software Engineering (1 hour)
+## Part 3: Documentation and Software Engineering
 
 3.1 Repository Structure
 Your GitHub repository should have a clear, organized structure. For example:
@@ -434,7 +437,7 @@ Submission Instructions
 
 - Create a public GitHub repository for your work
 
-- Complete as many of the tasks described above as possible in a three hour period
+- Complete as many of the tasks described above, to high quality, as possible in a three hour period
 
 - Ensure your repository follows the structure outlined in Part 3.1
 
