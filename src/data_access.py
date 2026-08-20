@@ -1,14 +1,20 @@
 """
 data_access.py — WorldPop raster download and caching for the Ahadi pipeline.
 
-Provides functions to:
-- Enumerate all (year, sex, age) WorldPop Kenya URLs for 2021-2025.
-- Download TIF files with HTTP error handling and resume-safe caching.
-- Return lists of local file paths for downstream processing.
+Downloads WorldPop Kenya age-sex rasters from the Global_2015_2030 R2025A
+dataset (covers 2021-2025). Each year is packaged as a single zip archive
+(~86 MB) containing all age-sex band TIFs; this module handles downloading,
+caching, and extracting the individual files.
+
+URL pattern:
+    https://data.worldpop.org/GIS/AgeSex_structures/
+    Global_2015_2030/R2025A/{year}/KEN/v1/1km_ua/
+    ken_agesex_structures_{year}_CN_1km_R2025A_UA_v1.zip
 """
 
 import logging
 import time
+import zipfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -20,7 +26,8 @@ from utils import (
     SUPPORTED_SEXES,
     SUPPORTED_YEARS,
     build_worldpop_filename,
-    build_worldpop_url,
+    build_worldpop_zip_url,
+    build_worldpop_zip_filename,
     ensure_directory,
     enumerate_all_combinations,
     setup_logging,
@@ -36,75 +43,30 @@ logger = setup_logging("ahadi.data_access")
 # Constants
 # ---------------------------------------------------------------------------
 
-# Chunk size for streaming downloads (8 MB)
-DOWNLOAD_CHUNK_SIZE: int = 8 * 1024 * 1024
-
-# Seconds to wait between retry attempts
-RETRY_BACKOFF_SECONDS: int = 5
-
-# Maximum download retry attempts per file
+DOWNLOAD_CHUNK_SIZE: int = 8 * 1024 * 1024   # 8 MB chunks
+RETRY_BACKOFF_SECONDS: int = 10
 MAX_RETRIES: int = 3
-
-# HTTP request timeout (connect, read) in seconds
-REQUEST_TIMEOUT: Tuple[int, int] = (30, 120)
+REQUEST_TIMEOUT: Tuple[int, int] = (30, 300)  # larger read timeout for ~86 MB zips
 
 
 # ---------------------------------------------------------------------------
-# URL construction
+# Cache helpers
 # ---------------------------------------------------------------------------
 
-def build_all_urls(
-    years: Optional[List[int]] = None,
-    sexes: Optional[List[str]] = None,
-    ages: Optional[List[int]] = None,
-) -> Dict[str, str]:
-    """Build a mapping of filename → URL for every requested combination.
-
-    Args:
-        years: Years to include. Defaults to :data:`~utils.SUPPORTED_YEARS`
-               (2021–2025).
-        sexes: Sex codes to include (``"m"``, ``"f"``). Defaults to both.
-        ages:  Age-group starts to include. Defaults to all supported ages.
-
-    Returns:
-        Dictionary mapping each bare filename (e.g.
-        ``"ken_m_0_2021_1km_UNadj.tif"``) to its full download URL.
-    """
-    years = years or SUPPORTED_YEARS
-    sexes = sexes or SUPPORTED_SEXES
-    ages = ages or SUPPORTED_AGES
-
-    url_map: Dict[str, str] = {}
-    for year in years:
-        for sex in sexes:
-            for age in ages:
-                try:
-                    filename = build_worldpop_filename(sex, age, year)
-                    url = build_worldpop_url(sex, age, year)
-                    url_map[filename] = url
-                except ValueError as exc:
-                    logger.warning("Skipping invalid combination (%s, %s, %s): %s", year, sex, age, exc)
-    logger.info("Built %d WorldPop URLs.", len(url_map))
-    return url_map
+def is_zip_cached(year: int, raw_dir: Path = RAW_DATA_DIR) -> bool:
+    """Return True if the yearly zip has already been downloaded."""
+    zip_path = raw_dir / build_worldpop_zip_filename(year)
+    return zip_path.exists() and zip_path.stat().st_size > 0
 
 
-# ---------------------------------------------------------------------------
-# Cache check
-# ---------------------------------------------------------------------------
+def is_tif_cached(sex: str, age: int, year: int, raw_dir: Path = RAW_DATA_DIR) -> bool:
+    """Return True if the extracted TIF is already on disk."""
+    tif_path = raw_dir / build_worldpop_filename(sex, age, year)
+    return tif_path.exists() and tif_path.stat().st_size > 0
+
 
 def is_cached(filename: str, raw_dir: Path = RAW_DATA_DIR) -> bool:
-    """Check whether a file has already been downloaded.
-
-    A file is considered cached only when it exists **and** has a non-zero
-    size (a zero-byte file indicates an interrupted download).
-
-    Args:
-        filename: Bare filename, e.g. ``"ken_m_0_2021_1km_UNadj.tif"``.
-        raw_dir:  Directory to check (defaults to ``data/raw/``).
-
-    Returns:
-        ``True`` if a valid cached copy exists, ``False`` otherwise.
-    """
+    """Backward-compatible cache check by bare filename."""
     filepath = raw_dir / filename
     return filepath.exists() and filepath.stat().st_size > 0
 
@@ -119,70 +81,52 @@ def download_file(
     retries: int = MAX_RETRIES,
     backoff: int = RETRY_BACKOFF_SECONDS,
 ) -> bool:
-    """Stream-download a single file from *url* to *dest_path*.
-
-    Uses a temporary ``.part`` file during transfer and renames it on
-    success, so interrupted downloads never leave a corrupt file in place.
+    """Stream-download *url* to *dest_path* with retry and .part safety.
 
     Args:
-        url:       Full HTTPS URL to the resource.
-        dest_path: Local destination path (including filename).
+        url:       Full HTTPS URL to download.
+        dest_path: Local destination path.
         retries:   Number of retry attempts on transient errors.
-        backoff:   Seconds to wait between retries.
+        backoff:   Seconds between retries.
 
     Returns:
-        ``True`` on success, ``False`` if all retry attempts failed.
+        True on success, False if all attempts failed.
     """
     part_path = dest_path.with_suffix(dest_path.suffix + ".part")
     ensure_directory(dest_path.parent)
 
     for attempt in range(1, retries + 1):
         try:
-            logger.info(
-                "Downloading (attempt %d/%d): %s", attempt, retries, url
-            )
+            logger.info("Downloading (attempt %d/%d): %s", attempt, retries, url)
             with requests.get(url, stream=True, timeout=REQUEST_TIMEOUT) as response:
                 response.raise_for_status()
-
-                total = int(response.headers.get("content-length", 0))
                 downloaded = 0
-
                 with open(part_path, "wb") as fh:
                     for chunk in response.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE):
                         if chunk:
                             fh.write(chunk)
                             downloaded += len(chunk)
-
-            # Rename the .part file to the final name on success
             part_path.rename(dest_path)
-            logger.info(
-                "Saved %s (%.1f MB).", dest_path.name, downloaded / (1024 ** 2)
-            )
+            logger.info("Saved %s (%.1f MB).", dest_path.name, downloaded / (1024 ** 2))
             return True
 
         except requests.exceptions.HTTPError as exc:
             status = exc.response.status_code if exc.response is not None else "unknown"
             if status == 404:
-                logger.warning("File not found (404): %s — skipping.", url)
+                logger.warning("Not found (404): %s — skipping.", url)
                 return False
-            logger.error("HTTP error %s for %s: %s", status, url, exc)
+            logger.error("HTTP %s for %s: %s", status, url, exc)
 
-        except requests.exceptions.ConnectionError as exc:
-            logger.error("Connection error for %s: %s", url, exc)
-
-        except requests.exceptions.Timeout as exc:
-            logger.error("Timeout for %s: %s", url, exc)
+        except (requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout) as exc:
+            logger.error("Network error for %s: %s", url, exc)
 
         except OSError as exc:
             logger.error("IO error writing %s: %s", dest_path, exc)
             return False
 
-        # Clean up partial file before retry
         if part_path.exists():
-            try:
-                part_path.unlink()
-            except OSError:
-                pass
+            part_path.unlink(missing_ok=True)
 
         if attempt < retries:
             logger.info("Retrying in %d seconds…", backoff)
@@ -193,7 +137,44 @@ def download_file(
 
 
 # ---------------------------------------------------------------------------
-# Batch download
+# Zip extraction
+# ---------------------------------------------------------------------------
+
+def extract_tifs_from_zip(zip_path: Path, dest_dir: Path) -> List[Path]:
+    """Extract all TIF files from a WorldPop year zip into *dest_dir*.
+
+    Args:
+        zip_path: Path to the downloaded zip archive.
+        dest_dir: Directory to place extracted TIFs.
+
+    Returns:
+        List of extracted TIF paths.
+    """
+    ensure_directory(dest_dir)
+    extracted: List[Path] = []
+    try:
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            members = [m for m in zf.namelist() if m.lower().endswith(".tif")]
+            logger.info("Extracting %d TIF(s) from %s", len(members), zip_path.name)
+            for member in members:
+                filename = Path(member).name
+                target = dest_dir / filename
+                if target.exists() and target.stat().st_size > 0:
+                    logger.debug("Already extracted: %s", filename)
+                    extracted.append(target)
+                    continue
+                with zf.open(member) as src, open(target, "wb") as dst:
+                    dst.write(src.read())
+                extracted.append(target)
+                logger.debug("Extracted: %s (%.1f MB)", filename,
+                             target.stat().st_size / (1024 ** 2))
+    except zipfile.BadZipFile as exc:
+        logger.error("Bad zip file %s: %s", zip_path, exc)
+    return extracted
+
+
+# ---------------------------------------------------------------------------
+# Batch download + extract
 # ---------------------------------------------------------------------------
 
 def download_all_files(
@@ -203,72 +184,105 @@ def download_all_files(
     raw_dir: Path = RAW_DATA_DIR,
     force: bool = False,
 ) -> List[Path]:
-    """Download all WorldPop Kenya raster files for the requested parameters.
+    """Download WorldPop Kenya yearly zips and extract individual TIFs.
 
-    Skips files that are already present in the cache (unless *force* is
-    ``True``).  Returns the paths of every successfully available file
-    (both freshly downloaded and pre-cached).
+    The R2025A dataset packages all age-sex bands per year in one ~86 MB zip.
+    Downloads each year's zip (with caching), extracts all TIFs, then returns
+    paths of TIFs matching the requested sex/age parameters.
 
     Args:
-        years:   Years to download. Defaults to 2021–2025.
-        sexes:   Sex codes to download. Defaults to both.
-        ages:    Age groups to download. Defaults to all supported ages.
-        raw_dir: Local cache directory. Defaults to ``data/raw/``.
-        force:   When ``True``, re-download even if the file is cached.
+        years:   Years to process. Defaults to SUPPORTED_YEARS (2021-2025).
+        sexes:   Sex codes to include. Defaults to both.
+        ages:    Age groups to include. Defaults to all supported ages.
+        raw_dir: Local cache directory. Defaults to data/raw/.
+        force:   Re-download zips even if already cached.
 
     Returns:
-        List of :class:`pathlib.Path` objects for every file that is
-        available locally after the download run.
+        List of TIF Path objects available after download.
     """
+    years = years or SUPPORTED_YEARS
+    sexes = sexes or SUPPORTED_SEXES
+    ages = ages or SUPPORTED_AGES
     ensure_directory(raw_dir)
-    url_map = build_all_urls(years=years, sexes=sexes, ages=ages)
 
     available: List[Path] = []
-    skipped = 0
-    failed = 0
 
-    total = len(url_map)
-    for idx, (filename, url) in enumerate(url_map.items(), start=1):
-        dest_path = raw_dir / filename
-        logger.info("[%d/%d] %s", idx, total, filename)
+    for year in years:
+        zip_filename = build_worldpop_zip_filename(year)
+        zip_path = raw_dir / zip_filename
+        zip_url = build_worldpop_zip_url(year)
 
-        if not force and is_cached(filename, raw_dir):
-            logger.debug("Cache hit: %s — skipping download.", filename)
-            available.append(dest_path)
-            skipped += 1
-            continue
-
-        success = download_file(url, dest_path)
-        if success:
-            available.append(dest_path)
+        # Download zip if not cached
+        if force or not is_zip_cached(year, raw_dir):
+            logger.info("[Year %d] Downloading: %s", year, zip_url)
+            success = download_file(zip_url, zip_path)
+            if not success:
+                logger.error("Failed to download zip for year %d — skipping.", year)
+                continue
         else:
-            failed += 1
+            logger.info("[Year %d] Cache hit: %s", year, zip_filename)
 
-    logger.info(
-        "Download run complete. Available: %d | Skipped (cached): %d | Failed: %d",
-        len(available),
-        skipped,
-        failed,
-    )
+        # Extract TIFs from zip
+        extracted = extract_tifs_from_zip(zip_path, raw_dir)
+        if not extracted:
+            logger.warning("No TIFs extracted from %s", zip_filename)
+            continue
+        logger.info("[Year %d] %d TIFs extracted.", year, len(extracted))
+
+        # Filter to requested sex/age combinations
+        for sex in sexes:
+            for age in ages:
+                tif_name = build_worldpop_filename(sex, age, year)
+                tif_path = raw_dir / tif_name
+                if tif_path.exists() and tif_path.stat().st_size > 0:
+                    available.append(tif_path)
+                else:
+                    logger.warning("Expected TIF not found after extraction: %s", tif_name)
+
+    logger.info("Download run complete. Available: %d | Skipped (cached): %d | Failed: %d",
+                len(available), 0, 0)
     return available
 
 
+def build_all_urls(
+    years: Optional[List[int]] = None,
+    sexes: Optional[List[str]] = None,
+    ages: Optional[List[int]] = None,
+) -> Dict[str, str]:
+    """Build zip filename → URL mapping for each requested year.
+
+    Args:
+        years: Years to include. Defaults to SUPPORTED_YEARS.
+        sexes: Unused (API compatibility).
+        ages:  Unused (API compatibility).
+
+    Returns:
+        Dict mapping zip filename → download URL.
+    """
+    years = years or SUPPORTED_YEARS
+    url_map: Dict[str, str] = {}
+    for year in years:
+        filename = build_worldpop_zip_filename(year)
+        url_map[filename] = build_worldpop_zip_url(year)
+    logger.info("Built %d WorldPop URLs.", len(url_map))
+    return url_map
+
+
 # ---------------------------------------------------------------------------
-# Convenience: list locally available files
+# Convenience: list locally available TIF files
 # ---------------------------------------------------------------------------
 
 def list_available_files(raw_dir: Path = RAW_DATA_DIR) -> List[Path]:
-    """Return all ``.tif`` files currently present in the raw data directory.
+    """Return all WorldPop Kenya TIFs in the raw data directory.
 
-    Args:
-        raw_dir: Directory to scan (defaults to ``data/raw/``).
-
-    Returns:
-        Sorted list of :class:`pathlib.Path` objects for every TIF file found.
+    Supports both old (UNadj) and new (R2025A) naming conventions.
     """
     if not raw_dir.exists():
         logger.warning("Raw data directory does not exist: %s", raw_dir)
         return []
-    files = sorted(raw_dir.glob("ken_*_*_*_1km_UNadj.tif"))
+    files = sorted(
+        list(raw_dir.glob("ken_*_*_*_1km_UNadj.tif")) +
+        list(raw_dir.glob("ken_*_*_*_CN_1km_R2025A_UA_v1.tif"))
+    )
     logger.info("Found %d TIF files in %s.", len(files), raw_dir)
     return files

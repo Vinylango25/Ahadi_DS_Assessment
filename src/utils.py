@@ -24,11 +24,20 @@ PROCESSED_DATA_DIR: Path = PROJECT_ROOT / "data" / "processed"
 FIGURES_DIR: Path = PROJECT_ROOT / "outputs" / "figures"
 VALIDATION_LOG_PATH: Path = PROCESSED_DATA_DIR / "validation_log.txt"
 
-# WorldPop base URL template
+# WorldPop base URL template — Global_2015_2030 R2025A dataset (covers 2021-2025)
+# Each year is a single zip containing all age-sex TIFs for Kenya.
+# URL pattern: {BASE}/{year}/KEN/v1/1km_ua/ken_agesex_structures_{year}_CN_1km_R2025A_UA_v1.zip
 WORLDPOP_BASE_URL: str = (
     "https://data.worldpop.org/GIS/AgeSex_structures/"
-    "Global_2000_2020_1km_UNadj/unconstrained/{year}/KEN/"
+    "Global_2015_2030/R2025A/{year}/KEN/v1/1km_ua/"
 )
+
+# Zip filename pattern for the new dataset
+WORLDPOP_ZIP_FILENAME: str = "ken_agesex_structures_{year}_CN_1km_R2025A_UA_v1.zip"
+
+# Individual TIF filename pattern inside the zip (and on disk after extraction)
+# Files are named: ken_{sex}_{age}_{year}_CN_1km_R2025A_UA_v1.tif
+WORLDPOP_TIF_PATTERN: str = "ken_{sex}_{age}_{year}_CN_1km_R2025A_UA_v1.tif"
 
 # Supported parameter ranges
 SUPPORTED_YEARS: List[int] = [2021, 2022, 2023, 2024, 2025]
@@ -136,11 +145,11 @@ def get_processed_filepath(filename: str) -> Path:
 # ---------------------------------------------------------------------------
 
 def build_worldpop_filename(sex: str, age: int, year: int) -> str:
-    """Construct the standard WorldPop Kenya raster filename.
+    """Construct the WorldPop Kenya raster filename (R2025A dataset).
 
-    The naming convention used by WorldPop is::
+    The naming convention for the new dataset is::
 
-        ken_{sex}_{age}_{year}_1km_UNadj.tif
+        ken_{sex}_{age}_{year}_CN_1km_R2025A_UA_v1.tif
 
     Args:
         sex:  Sex code — ``"m"`` (male) or ``"f"`` (female).
@@ -148,7 +157,7 @@ def build_worldpop_filename(sex: str, age: int, year: int) -> str:
         year: Reference year, e.g. 2021.
 
     Returns:
-        Filename string, e.g. ``"ken_m_0_2021_1km_UNadj.tif"``.
+        Filename string, e.g. ``"ken_m_0_2021_CN_1km_R2025A_UA_v1.tif"``.
 
     Raises:
         ValueError: If *sex*, *age*, or *year* are not in the supported sets.
@@ -161,14 +170,39 @@ def build_worldpop_filename(sex: str, age: int, year: int) -> str:
     if year not in SUPPORTED_YEARS:
         raise ValueError(f"year must be one of {SUPPORTED_YEARS}, got {year}")
 
-    return f"ken_{sex}_{age}_{year}_1km_UNadj.tif"
+    return WORLDPOP_TIF_PATTERN.format(sex=sex, age=age, year=year)
+
+
+def build_worldpop_zip_filename(year: int) -> str:
+    """Construct the WorldPop Kenya zip archive filename for a given year.
+
+    Args:
+        year: Reference year, e.g. 2021.
+
+    Returns:
+        Zip filename string, e.g. ``"ken_agesex_structures_2021_CN_1km_R2025A_UA_v1.zip"``.
+    """
+    return WORLDPOP_ZIP_FILENAME.format(year=year)
+
+
+def build_worldpop_zip_url(year: int) -> str:
+    """Construct the full WorldPop download URL for a Kenya yearly zip archive.
+
+    Args:
+        year: Reference year.
+
+    Returns:
+        Fully-qualified HTTPS URL string.
+    """
+    base = WORLDPOP_BASE_URL.format(year=year)
+    return base + build_worldpop_zip_filename(year)
 
 
 def build_worldpop_url(sex: str, age: int, year: int) -> str:
-    """Construct the full WorldPop download URL for a Kenya raster file.
+    """Return the zip URL for the year containing the requested age-sex band.
 
-    Combines the base URL template with the filename produced by
-    :func:`build_worldpop_filename`.
+    In the R2025A dataset, all bands for a given year are bundled in one zip.
+    This function returns the zip URL (individual TIF URLs are not available).
 
     Args:
         sex:  Sex code — ``"m"`` or ``"f"``.
@@ -176,14 +210,9 @@ def build_worldpop_url(sex: str, age: int, year: int) -> str:
         year: Reference year.
 
     Returns:
-        Fully-qualified HTTPS URL string.
-
-    Raises:
-        ValueError: Propagated from :func:`build_worldpop_filename`.
+        Zip URL for the year.
     """
-    filename = build_worldpop_filename(sex, age, year)
-    base = WORLDPOP_BASE_URL.format(year=year)
-    return base + filename
+    return build_worldpop_zip_url(year)
 
 
 def enumerate_all_combinations() -> List[Tuple[int, str, int]]:
@@ -205,7 +234,11 @@ def enumerate_all_combinations() -> List[Tuple[int, str, int]]:
 def parse_worldpop_filename(filename: str) -> Tuple[str, int, int]:
     """Extract (sex, age, year) metadata from a WorldPop Kenya filename.
 
-    Expected format: ``ken_{sex}_{age}_{year}_1km_UNadj.tif``
+    Supports both the legacy format::
+        ken_{sex}_{age}_{year}_1km_UNadj.tif
+
+    And the new R2025A format::
+        ken_{sex}_{age}_{year}_CN_1km_R2025A_UA_v1.tif
 
     Args:
         filename: Bare filename or full path string.
@@ -215,25 +248,23 @@ def parse_worldpop_filename(filename: str) -> Tuple[str, int, int]:
         *age* is an integer, and *year* is a 4-digit integer.
 
     Raises:
-        ValueError: If the filename does not match the expected pattern.
+        ValueError: If the filename does not match either expected pattern.
     """
-    # Normalise: strip directories and extension
-    base = Path(filename).stem  # e.g. "ken_m_0_2021_1km_UNadj"
+    base = Path(filename).stem  # strip directory and extension
     parts = base.split("_")
-    # Expected parts: ['ken', sex, age, year, '1km', 'UNadj']
-    if len(parts) != 6 or parts[0] != "ken" or parts[4] != "1km" or parts[5] != "UNadj":
-        raise ValueError(
-            f"Filename '{filename}' does not match expected pattern "
-            "'ken_{{sex}}_{{age}}_{{year}}_1km_UNadj.tif'"
-        )
 
-    sex = parts[1]
-    try:
-        age = int(parts[2])
-        year = int(parts[3])
-    except ValueError as exc:
-        raise ValueError(
-            f"Could not parse age/year from filename '{filename}': {exc}"
-        ) from exc
+    # New format: ken_m_0_2021_CN_1km_R2025A_UA_v1 → 9 parts
+    # Legacy format: ken_m_0_2021_1km_UNadj → 6 parts
+    if len(parts) >= 4 and parts[0] == "ken":
+        try:
+            sex = parts[1]
+            age = int(parts[2])
+            year = int(parts[3])
+            if sex in SUPPORTED_SEXES:
+                return sex, age, year
+        except (ValueError, IndexError):
+            pass
 
-    return sex, age, year
+    raise ValueError(
+        f"Filename '{filename}' does not match expected WorldPop Kenya pattern"
+    )
