@@ -1,0 +1,15 @@
+# Exclude backend Python files — Vercel deploys Angular frontend only
+requirements.txt
+environment.yml
+backend/
+src/
+tests/
+data/
+outputs/
+dashboard/
+Dockerfile
+docker-compose.yml
+*.db
+*.sqlite
+.env
+.env.example
