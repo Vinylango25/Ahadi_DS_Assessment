@@ -6,7 +6,7 @@ const fs    = require('fs');
 const path  = require('path');
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
-const GROQ_MODEL   = 'llama-3.1-8b-instant';
+const GROQ_MODEL   = 'qwen/qwen3.6-27b';
 
 // population.json is copied into dist/browser by the Angular build (from public/)
 // On Vercel the output dir is dist/browser, so we read from there.
@@ -157,3 +157,4 @@ Please provide a public health commentary on ${county} County's demographic prof
     });
   }
 };
+

@@ -6,7 +6,7 @@ const fs    = require('fs');
 const path  = require('path');
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
-const GROQ_MODEL   = 'llama-3.1-8b-instant';
+const GROQ_MODEL   = 'qwen/qwen3.6-27b';
 
 function loadPopulationData() {
   const candidates = [
@@ -137,3 +137,4 @@ Provide a national-level public health commentary on Kenya's demographic situati
     res.status(200).json({ year, insight: fallback, ai_powered: false });
   }
 };
+
