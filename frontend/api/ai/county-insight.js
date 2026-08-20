@@ -1,6 +1,4 @@
 // Vercel Serverless Function: GET /api/ai/county-insight?county=Nairobi&year=2025
-// Calls Groq LLaMA 3.1-8b-instant to generate a demographic insight for a county.
-
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
@@ -8,15 +6,13 @@ const path  = require('path');
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const GROQ_MODEL   = 'qwen/qwen3.6-27b';
 
-// population.json is copied into dist/browser by the Angular build (from public/)
-// On Vercel the output dir is dist/browser, so we read from there.
-// In the serverless function, __dirname is the api/ai folder; population.json
-// is at ../../dist/browser/population.json relative to this file at build time.
-// However Vercel also copies all outputDirectory files alongside functions, so
-// we try multiple paths.
+function stripThinkTags(text) {
+  return (text || '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
+
 function loadPopulationData() {
   const candidates = [
-    path.join(__dirname, '../population.json'),          // api/population.json
+    path.join(__dirname, '../population.json'),
     path.join(__dirname, '../../dist/browser/population.json'),
     path.join(process.cwd(), 'dist/browser/population.json'),
     path.join(process.cwd(), 'population.json'),
@@ -46,17 +42,17 @@ function callGroq(systemPrompt, userPrompt) {
       path:     '/openai/v1/chat/completions',
       method:   'POST',
       headers:  {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type':   'application/json',
+        'Authorization':  `Bearer ${GROQ_API_KEY}`,
         'Content-Length': Buffer.byteLength(body),
       },
-    }, res => {
+    }, (res) => {
       let data = '';
       res.on('data', chunk => { data += chunk; });
       res.on('end', () => {
         try {
           const json = JSON.parse(data);
-          if (json.error) return reject(new Error(json.error.message || 'Groq error'));
+          if (json.error) return reject(new Error(json.error.message || JSON.stringify(json.error)));
           resolve(stripThinkTags(json.choices[0].message.content));
         } catch (e) { reject(e); }
       });
@@ -68,18 +64,18 @@ function callGroq(systemPrompt, userPrompt) {
 }
 
 function fallbackInsight(data) {
-  const county     = data.county || 'This county';
-  const depRatio   = data.dependency_ratio || 0;
-  const pctChild   = data.pct_children || 0;
-  const sexRatio   = data.sex_ratio || 100;
-  let insight = `${county} has a dependency ratio of ${depRatio.toFixed(1)}, `;
-  if (depRatio > 80)      insight += 'which is high and indicates significant pressure on the working-age population. ';
-  else if (depRatio > 60) insight += 'which is moderate. Health planners should monitor this closely. ';
-  else                    insight += 'which is relatively low, suggesting a balanced age structure. ';
-  if (pctChild > 20) insight += `With ${pctChild.toFixed(1)}% children under 5, there is strong demand for paediatric services. `;
-  if (sexRatio > 105)     insight += 'The sex ratio skews male, possibly reflecting migration patterns.';
-  else if (sexRatio < 95) insight += 'The sex ratio skews female, possibly indicating male out-migration.';
-  return insight;
+  const county   = data.county || 'This county';
+  const dep      = data.dependency_ratio || 0;
+  const pctChild = data.pct_children || 0;
+  const sex      = data.sex_ratio || 100;
+  let t = `${county} has a dependency ratio of ${dep.toFixed(1)}. `;
+  if (dep > 80)      t += 'High dependency — significant pressure on working-age population. ';
+  else if (dep > 60) t += 'Moderate dependency — health planners should monitor this. ';
+  else               t += 'Low dependency — relatively balanced age structure. ';
+  if (pctChild > 20) t += `With ${pctChild.toFixed(1)}% children under 5, strong paediatric investment is needed. `;
+  if (sex > 105)     t += 'Male-skewed sex ratio — may reflect economic migration.';
+  else if (sex < 95) t += 'Female-skewed sex ratio — may indicate male out-migration.';
+  return t;
 }
 
 module.exports = async (req, res) => {
@@ -90,72 +86,47 @@ module.exports = async (req, res) => {
   const county = (req.query.county || '').trim();
   const year   = parseInt(req.query.year || '2025', 10);
 
-  if (!county) {
-    res.status(400).json({ detail: 'county parameter is required' });
-    return;
-  }
+  if (!county) { res.status(400).json({ detail: 'county required' }); return; }
 
-  // Find county data from population.json
   const bundle = loadPopulationData();
-  const key    = `${county}_${year}`;
-  const data   = bundle?.county_summaries?.[key] || { county, year };
+  const data   = bundle?.county_summaries?.[`${county}_${year}`] || { county, year };
 
   if (!GROQ_API_KEY) {
-    res.status(200).json({
-      county,
-      year,
-      insight: fallbackInsight(data),
-      ai_powered: false,
-    });
+    res.status(200).json({ county, year, insight: fallbackInsight(data), ai_powered: false, debug: 'no key' });
     return;
   }
 
   const SYSTEM = `You are a senior public health data analyst specialising in Kenya's demographic trends.
 Generate exactly 5 numbered, actionable insights based on the demographic data provided.
 
-Format your response as:
+Format:
 1. **[Short Title]** — Insight text (2-3 sentences, specific and actionable).
 2. **[Short Title]** — Insight text.
 3. **[Short Title]** — Insight text.
 4. **[Short Title]** — Insight text.
 5. **[Short Title]** — Insight text.
 
-Cover these 5 angles in order:
-1. Population size & growth — what it means for facility capacity and service delivery planning
-2. Child health (under-5) — immunisation, nutrition, maternal & child health service demand
-3. Elderly & ageing — NCDs, elder care, pension/social protection needs
-4. Sex ratio & gender — gender equity in services, migration implications, maternal/paternal health
-5. Dependency ratio & sustainability — fiscal and health system pressure, workforce planning
+Cover in order:
+1. Population size & service delivery capacity
+2. Child health (under-5) — immunisation, nutrition, MCH demand
+3. Elderly & ageing — NCDs, elder care needs
+4. Sex ratio & gender — equity, migration patterns, gender-specific health
+5. Dependency ratio & sustainability — fiscal and health system pressure
 
-Rules:
-- Be SPECIFIC — link every number to a real planning consequence
-- Each insight must be actionable by a Ministry of Health official
-- Plain English, no jargon
-- Do NOT just repeat the numbers — interpret and recommend`;
+Rules: Be SPECIFIC. Actionable. Plain English for Ministry of Health officials. Interpret, don't just describe.`;
 
-
-  const USER = `County: ${county}  |  Year: ${year}
-
-Key demographics:
-- Total population:       ${(data.total_population || 0).toLocaleString('en-US', {maximumFractionDigits: 0})}
-- Children under 5:       ${(data.children_under_5 || 0).toLocaleString('en-US', {maximumFractionDigits: 0})} (${(data.pct_children || 0).toFixed(1)}%)
-- Working age (15–64):    ${(data.working_age || 0).toLocaleString('en-US', {maximumFractionDigits: 0})}
-- Elderly 65+:            ${(data.elderly_65plus || 0).toLocaleString('en-US', {maximumFractionDigits: 0})} (${(data.pct_elderly || 0).toFixed(1)}%)
-- Sex ratio:              ${(data.sex_ratio || 0).toFixed(1)} males per 100 females
-- Dependency ratio:       ${(data.dependency_ratio || 0).toFixed(1)}
-
-Please provide a public health commentary on ${county} County's demographic profile.`;
+  const USER = `County: ${county} | Year: ${year}
+- Total population: ${(data.total_population||0).toLocaleString()}
+- Children under 5: ${(data.children_under_5||0).toLocaleString()} (${(data.pct_children||0).toFixed(1)}%)
+- Working age (15–64): ${(data.working_age||0).toLocaleString()}
+- Elderly 65+: ${(data.elderly_65plus||0).toLocaleString()} (${(data.pct_elderly||0).toFixed(1)}%)
+- Sex ratio: ${(data.sex_ratio||0).toFixed(1)} males per 100 females
+- Dependency ratio: ${(data.dependency_ratio||0).toFixed(1)}`;
 
   try {
     const insight = await callGroq(SYSTEM, USER);
     res.status(200).json({ county, year, insight, ai_powered: true });
   } catch (err) {
-    res.status(200).json({
-      county, year,
-      insight:    fallbackInsight(data),
-      ai_powered: false,
-    });
+    res.status(200).json({ county, year, insight: fallbackInsight(data), ai_powered: false, error: err.message });
   }
 };
-
-

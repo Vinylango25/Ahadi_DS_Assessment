@@ -1,14 +1,15 @@
 // Vercel Serverless Function: POST /api/ai/query
 // Body: { question: string }
-// Translates natural language questions into structured queries over population.json data.
-// No SQLite on Vercel — we run the query logic in JS against the in-memory JSON bundle.
-
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const GROQ_MODEL   = 'qwen/qwen3.6-27b';
+
+function stripThinkTags(text) {
+  return (text || '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
 
 function loadPopulationData() {
   const candidates = [
@@ -25,12 +26,11 @@ function loadPopulationData() {
   return null;
 }
 
-/** Flatten county_summaries into a flat array of records */
 function getRecords(bundle) {
   return Object.values(bundle?.county_summaries || {});
 }
 
-function callGroq(systemPrompt, userPrompt) {
+function callGroq(systemPrompt, userPrompt, maxTokens) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
       model: GROQ_MODEL,
@@ -39,7 +39,7 @@ function callGroq(systemPrompt, userPrompt) {
         { role: 'user',   content: userPrompt   },
       ],
       temperature: 0.1,
-      max_tokens:  500,
+      max_tokens:  maxTokens || 400,
     });
 
     const req = https.request({
@@ -47,17 +47,17 @@ function callGroq(systemPrompt, userPrompt) {
       path:     '/openai/v1/chat/completions',
       method:   'POST',
       headers:  {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type':   'application/json',
+        'Authorization':  `Bearer ${GROQ_API_KEY}`,
         'Content-Length': Buffer.byteLength(body),
       },
-    }, res => {
+    }, (res) => {
       let data = '';
       res.on('data', chunk => { data += chunk; });
       res.on('end', () => {
         try {
           const json = JSON.parse(data);
-          if (json.error) return reject(new Error(json.error.message || 'Groq error'));
+          if (json.error) return reject(new Error(json.error.message || JSON.stringify(json.error)));
           resolve(stripThinkTags(json.choices[0].message.content));
         } catch (e) { reject(e); }
       });
@@ -69,44 +69,44 @@ function callGroq(systemPrompt, userPrompt) {
 }
 
 const QUERY_SYSTEM = `You are a data analyst for Kenya population data. The user asks a question about Kenya counties.
-You must respond with a JSON object (and nothing else) describing how to query the data.
+Respond with ONLY a JSON object — no explanation, no markdown.
 
 Available fields on each record:
   county, year, total_population, children_under_5, working_age, elderly_65plus,
   sex_ratio, dependency_ratio, child_dependency_ratio, elderly_dependency_ratio,
   pct_children, pct_elderly, county_area_km2
 
-Your JSON response must have this exact shape:
+JSON shape:
 {
   "filter_year": <number or null>,
   "filter_county": <string or null>,
   "sort_by": <field name or null>,
   "sort_dir": "asc" | "desc",
-  "limit": <number, default 10>,
+  "limit": <number 1-50>,
   "aggregate": "sum" | "avg" | "max" | "min" | null,
   "aggregate_field": <field name or null>,
-  "intent": <one sentence describing what you're computing>
-}
-
-Examples:
-- "Which county has the highest dependency ratio in 2025?" → { "filter_year": 2025, "sort_by": "dependency_ratio", "sort_dir": "desc", "limit": 1, "aggregate": null, "intent": "Find county with highest dependency ratio in 2025" }
-- "Top 5 most populous counties in 2024" → { "filter_year": 2024, "sort_by": "total_population", "sort_dir": "desc", "limit": 5, "aggregate": null, "intent": "Top 5 by population in 2024" }
-- "Average children under 5 across all counties in 2025" → { "filter_year": 2025, "aggregate": "avg", "aggregate_field": "children_under_5", "intent": "Average children under 5 in 2025" }
-
-Respond ONLY with the JSON object. No explanation.`;
+  "filter_field": <field name or null>,
+  "filter_op": "gt" | "lt" | "eq" | null,
+  "filter_value": <number or null>,
+  "intent": <one sentence>
+}`;
 
 function executeQuery(records, plan) {
   let rows = [...records];
 
-  // Filter by year
-  if (plan.filter_year) {
-    rows = rows.filter(r => r.year === plan.filter_year);
-  }
+  if (plan.filter_year)   rows = rows.filter(r => r.year === plan.filter_year);
+  if (plan.filter_county) rows = rows.filter(r => r.county?.toLowerCase().includes(plan.filter_county.toLowerCase()));
 
-  // Filter by county
-  if (plan.filter_county) {
-    const county = plan.filter_county.toLowerCase();
-    rows = rows.filter(r => r.county?.toLowerCase().includes(county));
+  // Field filter (e.g. sex_ratio > 105)
+  if (plan.filter_field && plan.filter_op && plan.filter_value != null) {
+    rows = rows.filter(r => {
+      const v = r[plan.filter_field];
+      if (v == null) return false;
+      if (plan.filter_op === 'gt') return v > plan.filter_value;
+      if (plan.filter_op === 'lt') return v < plan.filter_value;
+      if (plan.filter_op === 'eq') return v === plan.filter_value;
+      return true;
+    });
   }
 
   // Aggregate
@@ -121,7 +121,7 @@ function executeQuery(records, plan) {
       case 'max': value = Math.max(...vals); break;
       case 'min': value = Math.min(...vals); break;
     }
-    return [{ [field]: value, year: plan.filter_year || 'all', counties: rows.length }];
+    return [{ result: value, field, year: plan.filter_year || 'all', counties: rows.length }];
   }
 
   // Sort
@@ -130,12 +130,12 @@ function executeQuery(records, plan) {
     rows.sort((a, b) => ((a[plan.sort_by] || 0) - (b[plan.sort_by] || 0)) * dir);
   }
 
-  // Limit
   const limit = Math.min(plan.limit || 10, 50);
+  const displayField = plan.sort_by || plan.filter_field || 'total_population';
   return rows.slice(0, limit).map(r => ({
-    county:           r.county,
-    year:             r.year,
-    [plan.sort_by || 'total_population']: r[plan.sort_by || 'total_population'],
+    county: r.county,
+    year:   r.year,
+    [displayField]: r[displayField],
   }));
 }
 
@@ -144,20 +144,13 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
-  if (req.method !== 'POST') { res.status(405).json({ detail: 'Method not allowed' }); return; }
+  if (req.method !== 'POST')    { res.status(405).json({ detail: 'Method not allowed' }); return; }
 
   const question = (req.body?.question || '').trim();
-  if (!question) {
-    res.status(400).json({ detail: 'question is required' });
-    return;
-  }
+  if (!question) { res.status(400).json({ detail: 'question is required' }); return; }
 
   if (!GROQ_API_KEY) {
-    res.status(200).json({
-      question, sql: null, results: [],
-      answer: 'AI query requires GROQ_API_KEY to be configured.',
-      error: null,
-    });
+    res.status(200).json({ question, sql: null, results: [], answer: 'AI query requires GROQ_API_KEY.', error: null });
     return;
   }
 
@@ -165,60 +158,33 @@ module.exports = async (req, res) => {
   const records = getRecords(bundle);
 
   try {
-    // Step 1: Get query plan from LLM
-    const planRaw = await callGroq(QUERY_SYSTEM, question);
+    // Step 1: query plan
+    const planRaw = await callGroq(QUERY_SYSTEM, question, 300);
     let plan;
     try {
       const cleaned = planRaw.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
       plan = JSON.parse(cleaned);
     } catch {
-      res.status(200).json({
-        question, sql: null, results: [],
-        answer: 'I had trouble understanding that question. Please try rephrasing.',
-        error: 'Failed to parse query plan',
-      });
+      res.status(200).json({ question, sql: null, results: [], answer: 'Could not parse your question. Try rephrasing.', error: 'parse error' });
       return;
     }
 
-    // Step 2: Execute against in-memory data
+    // Step 2: execute
     const results = executeQuery(records, plan);
 
     if (!results.length) {
-      res.status(200).json({
-        question, sql: `/* ${plan.intent} */`, results: [],
-        answer: 'No records found matching your query.',
-        error: null,
-      });
+      res.status(200).json({ question, sql: `/* ${plan.intent} */`, results: [], answer: 'No records found.', error: null });
       return;
     }
 
-    // Step 3: Generate natural language answer
-    const ANSWER_SYSTEM = `You are a data analyst. Given query results about Kenya's population data,
-provide a clear, concise plain English answer in 1-3 sentences. Be specific with numbers. Use commas for thousands.`;
+    // Step 3: plain-English answer
+    const ANSWER_SYS = `You are a data analyst. Given query results about Kenya's population, answer in 1-3 clear sentences. Be specific with numbers.`;
+    const ANSWER_USER = `Question: ${question}\nResults: ${JSON.stringify(results.slice(0, 5))}`;
+    const answer = await callGroq(ANSWER_SYS, ANSWER_USER, 200);
 
-    const ANSWER_USER = `Question: ${question}
+    res.status(200).json({ question, sql: `/* ${plan.intent} */`, results, answer, error: null });
 
-Results (first 5 rows):
-${JSON.stringify(results.slice(0, 5), null, 2)}
-
-Answer the question in plain English.`;
-
-    const answer = await callGroq(ANSWER_SYSTEM, ANSWER_USER);
-
-    res.status(200).json({
-      question,
-      sql:     `/* ${plan.intent} — executed against population.json */`,
-      results,
-      answer,
-      error:   null,
-    });
   } catch (err) {
-    res.status(200).json({
-      question, sql: null, results: [],
-      answer: null,
-      error:  err.message || 'Query failed',
-    });
+    res.status(200).json({ question, sql: null, results: [], answer: null, error: err.message });
   }
 };
-
-
