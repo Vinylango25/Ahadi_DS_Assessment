@@ -1,12 +1,16 @@
 // ============================================================
 // Ahadi Kenya Population Analytics — API Service
-// Handles backend schema shapes (FastAPI + Pydantic v2)
+// Handles backend schema shapes (FastAPI + Pydantic v2).
+// When environment.apiUrl is empty (production / Vercel), all
+// calls are transparently delegated to StaticDataService which
+// reads pre-built JSON assets from /public.
 // ============================================================
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { StaticDataService } from './static-data.service';
 import {
   AgePyramidData,
   ChoroplethData,
@@ -20,13 +24,18 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private readonly http = inject(HttpClient);
-  private readonly base = environment.apiUrl;
+  private readonly http        = inject(HttpClient);
+  private readonly staticSvc   = inject(StaticDataService);
+  private readonly base        = environment.apiUrl;
+
+  /** True in production (Vercel) — use static JSON assets instead of a live backend */
+  private get isStatic(): boolean { return !this.base; }
 
   // ── Metadata ──────────────────────────────────────────────────
 
   /** List all 47 counties. Backend returns string[] */
   getCounties(): Observable<County[]> {
+    if (this.isStatic) return this.staticSvc.getCounties();
     return this.http.get<string[]>(`${this.base}/api/counties`).pipe(
       map(names => names.map(name => ({ name, code: name })))
     );
@@ -34,11 +43,13 @@ export class ApiService {
 
   /** List available census years (2021-2025). */
   getYears(): Observable<number[]> {
+    if (this.isStatic) return this.staticSvc.getYears();
     return this.http.get<number[]>(`${this.base}/api/years`);
   }
 
   /** List available demographic indicators. Backend returns IndicatorsResponse */
   getIndicators(): Observable<Indicator[]> {
+    if (this.isStatic) return this.staticSvc.getIndicators();
     return this.http.get<IndicatorsResponse>(`${this.base}/api/indicators`).pipe(
       map(res => (res.indicators ?? []).map(m => ({
         id: m.key,
@@ -57,6 +68,7 @@ export class ApiService {
    * indicator values in properties. We extract entries for the frontend model.
    */
   getChoropleth(year: number, indicator: string): Observable<ChoroplethData> {
+    if (this.isStatic) return this.staticSvc.getChoropleth(year, indicator);
     const params = new HttpParams()
       .set('year', year)
       .set('indicator', indicator);
@@ -81,8 +93,9 @@ export class ApiService {
     );
   }
 
-  /** GeoJSON FeatureCollection for Kenya GADM Level 2 boundaries. */
+  /** GeoJSON FeatureCollection for Kenya county boundaries. */
   getGeojson(): Observable<GeoJSON.FeatureCollection> {
+    if (this.isStatic) return this.staticSvc.getGeojson();
     return this.http.get<GeoJSON.FeatureCollection>(`${this.base}/api/geojson`);
   }
 
@@ -90,6 +103,7 @@ export class ApiService {
 
   /** All demographic metrics for a single county + year. */
   getCountySummary(county: string, year: number): Observable<CountySummary> {
+    if (this.isStatic) return this.staticSvc.getCountySummary(county, year);
     const params = new HttpParams().set('year', year);
     return this.http.get<CountySummary>(
       `${this.base}/api/county/${encodeURIComponent(county)}`, { params }
@@ -104,6 +118,7 @@ export class ApiService {
    * We normalise to include series alias for the chart component.
    */
   getTimeseries(county?: string): Observable<TimeseriesData> {
+    if (this.isStatic) return this.staticSvc.getTimeseries(county);
     let params = new HttpParams();
     if (county) params = params.set('county', county);
     return this.http.get<any>(`${this.base}/api/timeseries`, { params }).pipe(
@@ -124,6 +139,7 @@ export class ApiService {
    * We add entries alias (top) for bar-chart component compatibility.
    */
   getComparison(year: number, indicator: string, n = 10): Observable<ComparisonData> {
+    if (this.isStatic) return this.staticSvc.getComparison(year, indicator, n);
     const params = new HttpParams()
       .set('year', year)
       .set('indicator', indicator)
@@ -148,6 +164,7 @@ export class ApiService {
    * We add rows alias and compute pct fields for the pyramid component.
    */
   getAgePyramid(county: string, year: number): Observable<AgePyramidData> {
+    if (this.isStatic) return this.staticSvc.getAgePyramid(county, year);
     const params = new HttpParams()
       .set('county', county)
       .set('year', year);

@@ -278,7 +278,7 @@ def validate_raster_crs(raster_path: Path) -> bool:
         _vlog(logging.WARNING, "Raster '%s' has no CRS defined.", raster_path.name)
         return False
 
-    if raster_crs.equals(target_crs):
+    if raster_crs == target_crs or raster_crs.to_epsg() == 4326:
         _vlog(logging.INFO, "Raster CRS OK for '%s': EPSG:4326. ✓", raster_path.name)
         return True
 
