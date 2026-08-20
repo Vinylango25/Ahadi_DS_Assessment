@@ -3,10 +3,14 @@
   "framework": null,
   "buildCommand": "npm install && npm run build",
   "outputDirectory": "dist/browser",
-  "rewrites": [
-    { "source": "/population.json",        "destination": "/population.json" },
-    { "source": "/kenya_counties.geojson", "destination": "/kenya_counties.geojson" },
-    { "source": "/(.*)",                   "destination": "/index.html" }
+  "routes": [
+    {
+      "src": "/(.*\\.(json|geojson|js|css|png|svg|ico|woff2?))",
+      "headers": { "Cache-Control": "public, max-age=3600" },
+      "continue": true
+    },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ],
   "headers": [
     {
@@ -16,12 +20,6 @@
         { "key": "X-Frame-Options",        "value": "DENY" },
         { "key": "X-XSS-Protection",       "value": "1; mode=block" },
         { "key": "Referrer-Policy",        "value": "strict-origin-when-cross-origin" }
-      ]
-    },
-    {
-      "source": "/(.*\\.(json|geojson|js|css|png|svg|ico|woff2?))",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
       ]
     }
   ]
