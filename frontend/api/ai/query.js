@@ -39,6 +39,7 @@ function callGroq(systemPrompt, userPrompt, maxTokens) {
         { role: 'user',   content: userPrompt   },
       ],
       temperature: 0.1,
+      reasoning_effort: 'none',
       max_tokens:  maxTokens || 400,
     });
 
@@ -188,3 +189,4 @@ module.exports = async (req, res) => {
     res.status(200).json({ question, sql: null, results: [], answer: null, error: err.message });
   }
 };
+

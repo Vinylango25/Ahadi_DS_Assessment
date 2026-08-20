@@ -34,6 +34,7 @@ function callGroq(systemPrompt, userPrompt) {
         { role: 'user',   content: userPrompt   },
       ],
       temperature: 0.3,
+      reasoning_effort: 'none',
       max_tokens:  900,
     });
 
@@ -130,3 +131,4 @@ Rules: Be SPECIFIC. Actionable. Plain English for Ministry of Health officials. 
     res.status(200).json({ county, year, insight: fallbackInsight(data), ai_powered: false, error: err.message });
   }
 };
+

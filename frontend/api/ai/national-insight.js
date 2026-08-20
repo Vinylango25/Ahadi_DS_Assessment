@@ -34,6 +34,7 @@ function callGroq(systemPrompt, userPrompt) {
         { role: 'user',   content: userPrompt   },
       ],
       temperature: 0.3,
+      reasoning_effort: 'none',
       max_tokens:  900,
     });
 
@@ -127,3 +128,4 @@ Rules: Be SPECIFIC with numbers. Actionable. Plain English. Interpret, don't jus
     res.status(200).json({ year, insight: fallback, ai_powered: false, error: err.message });
   }
 };
+
