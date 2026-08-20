@@ -58,7 +58,7 @@ function callGroq(systemPrompt, userPrompt) {
         try {
           const json = JSON.parse(data);
           if (json.error) return reject(new Error(json.error.message || 'Groq error'));
-          resolve(json.choices[0].message.content.trim());
+          resolve(stripThinkTags(json.choices[0].message.content));
         } catch (e) { reject(e); }
       });
     });
@@ -220,4 +220,5 @@ Answer the question in plain English.`;
     });
   }
 };
+
 

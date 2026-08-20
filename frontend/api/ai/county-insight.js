@@ -57,7 +57,7 @@ function callGroq(systemPrompt, userPrompt) {
         try {
           const json = JSON.parse(data);
           if (json.error) return reject(new Error(json.error.message || 'Groq error'));
-          resolve(json.choices[0].message.content.trim());
+          resolve(stripThinkTags(json.choices[0].message.content));
         } catch (e) { reject(e); }
       });
     });
@@ -157,4 +157,5 @@ Please provide a public health commentary on ${county} County's demographic prof
     });
   }
 };
+
 

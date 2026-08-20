@@ -51,7 +51,7 @@ function callGroq(systemPrompt, userPrompt) {
         try {
           const json = JSON.parse(data);
           if (json.error) return reject(new Error(json.error.message || 'Groq error'));
-          resolve(json.choices[0].message.content.trim());
+          resolve(stripThinkTags(json.choices[0].message.content));
         } catch (e) { reject(e); }
       });
     });
@@ -137,4 +137,6 @@ Provide a national-level public health commentary on Kenya's demographic situati
     res.status(200).json({ year, insight: fallback, ai_powered: false });
   }
 };
+
+
 
