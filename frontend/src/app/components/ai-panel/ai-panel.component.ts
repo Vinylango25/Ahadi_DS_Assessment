@@ -304,8 +304,36 @@ export class AIPanelComponent implements OnChanges {
   }
 
   formatInsight(text: string): string {
-    // Convert newlines to paragraph breaks
-    return text
+    if (!text) return '';
+
+    // Strip any leftover <think> blocks that slipped through
+    let clean = text
+      .replace(/<think>[\s\S]*?<\/think>/gi, '')
+      .replace(/<think>[\s\S]*/gi, '')
+      .trim();
+
+    // Parse numbered points: "1. **Title** — body" or "1. **Title**: body"
+    const pointRegex = /(\d+)\.\s+\*\*([^*]+)\*\*\s*[—–:-]+\s*([\s\S]*?)(?=\n\s*\d+\.|$)/g;
+    const points: Array<{num: string; title: string; body: string}> = [];
+    let match;
+    while ((match = pointRegex.exec(clean)) !== null) {
+      points.push({ num: match[1], title: match[2].trim(), body: match[3].trim() });
+    }
+
+    if (points.length >= 3) {
+      // Render as professional numbered insight cards
+      return points.map(p => `
+        <div class="insight-point">
+          <div class="insight-point-header">
+            <span class="insight-num">${p.num}</span>
+            <span class="insight-title">${p.title}</span>
+          </div>
+          <p class="insight-body">${p.body.replace(/\n/g, ' ')}</p>
+        </div>`).join('');
+    }
+
+    // Fallback: plain paragraphs
+    return clean
       .split(/\n\n+/)
       .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
       .join('');

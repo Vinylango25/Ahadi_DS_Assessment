@@ -7,7 +7,11 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const GROQ_MODEL   = 'qwen/qwen3.6-27b';
 
 function stripThinkTags(text) {
-  return (text || '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  if (!text) return "";
+  return text
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<think>[\s\S]*/gi, "")
+    .trim();
 }
 
 function loadPopulationData() {
@@ -128,4 +132,6 @@ Rules: Be SPECIFIC with numbers. Actionable. Plain English. Interpret, don't jus
     res.status(200).json({ year, insight: fallback, ai_powered: false, error: err.message });
   }
 };
+
+
 
