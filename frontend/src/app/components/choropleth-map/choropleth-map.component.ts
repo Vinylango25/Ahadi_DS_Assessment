@@ -235,6 +235,14 @@ export class ChoroplethMapComponent implements AfterViewInit, OnChanges, OnDestr
       style: (f) => this.featureStyle(f, min, max),
       onEachFeature: (f, layer) => this.bindFeatureEvents(f, layer, min, max),
     }).addTo(this.map);
+
+    // Always fit the map to Kenya county bounds after loading GeoJSON
+    try {
+      const bounds = this.geoLayer.getBounds();
+      if (bounds.isValid()) {
+        this.map.fitBounds(bounds, { padding: [10, 10], maxZoom: 8 });
+      }
+    } catch { /* ignore — falls back to KENYA_CENTER/ZOOM from initMap */ }
   }
 
   private featureStyle(feature: GeoJSON.Feature | undefined, min: number, max: number): L.PathOptions {
