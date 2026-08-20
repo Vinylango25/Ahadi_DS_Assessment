@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "name": "ahadi-kenya-population-analytics",
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist/browser",
+  "framework": null,
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
