@@ -1,449 +1,438 @@
-# Test Guidance for Data Scientist Position
+# Ahadi Kenya Population Analytics
 
-## Overview
-Welcome to the AHADI technical assessment. This exercise is designed to assess your skills in building reproducible data pipelines, performing spatial analysis, creating interactive visualizations, and communicating insights for public health decision-making. You will work with real-world population data for Kenya, similar to the types of analyses you would conduct at AHADI.
+> **AHADI Data Scientist Technical Assessment Submission**  
+> Kenya county-level demographic analytics: reproducible data pipeline + interactive full-stack dashboard
 
-Submission: A GitHub repository containing all code, datasets, and documentation.
+🌍 **Live Demo:** [https://frontend-sandy-tau-56.vercel.app](https://frontend-sandy-tau-56.vercel.app)  
+📦 **Repository:** [https://github.com/Vinylango25/Ahadi_DS_Assessment](https://github.com/Vinylango25/Ahadi_DS_Assessment)
 
-Read all instructions carefully before beginning.
+---
 
-## Background
-The Kenyan Ministry of Health needs to understand the country's population age structure to plan health interventions. Children under 5 require routine immunizations, the working-age population represents the workforce and economic base, and the elderly have increasing chronic disease needs. Understanding these patterns at the county level is essential for equitable resource allocation.
+## Table of Contents
 
-Your task is to process 2021-2025 population projections for Kenya, create a clean analytical dataset, and build an interactive dashboard that allows policymakers to explore demographic patterns across all 47 counties.
+1. [Project Overview](#project-overview)
+2. [Public Health Context](#public-health-context)
+3. [Repository Structure](#repository-structure)
+4. [Quick Start](#quick-start)
+5. [Part 0 — AI Use Disclosure](#part-0--ai-use-disclosure)
+6. [Part 1 — Reproducible Data Pipeline](#part-1--reproducible-data-pipeline)
+7. [Part 2 — Interactive Dashboard](#part-2--interactive-dashboard)
+8. [Part 3 — Code Quality & Documentation](#part-3--code-quality--documentation)
+9. [Deployment](#deployment)
+10. [Environment Variables](#environment-variables)
+11. [Tests](#tests)
+12. [Assumptions & Decisions](#assumptions--decisions)
 
-While the tasks below are clearly defined, there is **room for creativity** in how you approach the analysis, present your results, and communicate your findings.
-Candidates who go beyond the basics and demonstrate **thoughtful exploration, clear reasoning, and effective visualization** will receive additional credit. 
+---
 
-As a reminder: The technical assessment will consist of a timed assignment of no longer than 3 hours: we are interested in seeing what you can accomplish in this time. It is not necessary to complete all of the assigned items. Fewer items completed at higher quality will be better scored than more items at poor quality.
+## Project Overview
 
-## Data Sources 
-1. Population Data
-   You will work with [WorldPop](https://www.worldpop.org/) age- and sex-structured population data. The data are organized by country and are further segmented into age group and sex as GeoTIFF raster files.
-   For this exercise, use the **1km unconstrained resolution files for 2021-2025** from the Kenya directory. (1km_ua/constrained)
-   
-3. Administrative Boundaries
-   You will need district level boundaries to aggregate population data.
-   Kenya GADM Level 2 (Counties):
-      **Kenya:** [gadm41_KEN_2.json.zip](https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_KEN_2.json.zip)
+This project processes 2021–2025 [WorldPop](https://www.worldpop.org/) age- and sex-structured population raster data for Kenya, aggregates it to all 47 counties using zonal statistics, stores the results in a SQLite database, and serves them through an interactive full-stack dashboard.
 
-These boundaries are in **WGS 84 (EPSG:4326)** and can be used for:
-- Extracting population totals per district
-- Building choropleth maps
-- Linking raster data with tabular summaries for dashboard visualization
+**Tech stack:**
 
-## Your Tasks
+| Layer | Technology |
+|-------|-----------|
+| Data pipeline | Python 3.10+, rasterio, geopandas, pandas |
+| Backend API | FastAPI + SQLite (SQLAlchemy ORM) |
+| Frontend | Angular 19 (standalone components, signals) |
+| Charts | Apache ECharts (ngx-echarts) |
+| Map | Leaflet.js |
+| AI Insights | Groq API (LLaMA 3.1-8b-instant) |
+| Deployment | Vercel (frontend) + Docker Compose (full-stack local) |
 
-## Part 0. AI Use Disclosure (Required):
-If you used AI tools (ChatGPT, Claude, Copilot, etc.) please include a txt document in your final GitHub repository with the following information:
+---
 
-- Specify which tools were used
+## Public Health Context
 
-- Describe how they were used (e.g., "Used ChatGPT to help debug raster projection issues")
+The Kenyan Ministry of Health needs county-level age structure data to plan equitable health interventions:
 
-- Provide a copy of any prompts submitted
+- **Children under 5** require routine immunisations, paediatric care, and nutrition programmes
+- **Working-age population (15–64)** represents both the economic base and the primary health workforce
+- **Elderly (65+)** have increasing chronic disease and geriatric care needs
+- **Dependency ratio** — the ratio of dependents to working-age people — directly drives health financing pressure
 
-- Describe how you reviewed and validated AI-generated code
+This dashboard allows policymakers to explore these patterns across all 47 counties for any year from 2021 to 2025, broken down by sex and indicator, to support data-driven resource allocation decisions.
 
-- Note that using AI is allowed: we want to see that you know how to use it responsibly
+---
 
+## Repository Structure
 
-## Part 1: Reproducible Data Pipeline
-Create an automated, reproducible pipeline that takes in, processes and validates the population data for Kenya.
-
-Requirements:
-1.1 Programmatic Data Access
-- Write a script that automatically downloads or accesses the required population files from the provided URL.
-
-- Your code should handle the directory listing or use the URL pattern to construct file paths.
-
-- **Do not manually download individual files** - your code must programmatically access the data
-
-- Use appropriate libraries for HTTP requests (e.g., requests in Python, curl in R)
-
-- Implement caching to avoid re-downloading files during development
-
-1.2 Data Validation and Cleaning
-Your pipeline must handle intentional and realistic data inconsistencies:
-
-File Validation:
-
-- Programmatically identify all available GeoTIFF files in the Kenya directory
-
-- Parse the file names to extract age group and sex
-
-- Verify that all expected age-sex combinations are present (both sexes for each age group)
-
-- Log any missing files and decide how to handle them (e.g., impute or drop)
-
-Spatial Validation:
-
-- Load the administrative boundaries and verify they are in the correct CRS (EPSG:4326)
-
-- Load a sample raster and verify its CRS
-
-- Adjust boundaries to match the raster CRS if needed (or vice versa)
-
-- Verify that all counties are present and properly named
-
-Data Quality Checks:
-
-- Check for negative population values and handle appropriately
-
-- Verify that population values are plausible (e.g., no zeros for populated areas)
-
-- Check for and log any unusual patterns
-
-1.3 Spatial Aggregation
-For each county and age-sex combination:
-
-- Extract population values from the raster to each county polygon
-
-- Calculate total population per county for each age-sex group
-
-- Create Summary Demographic indicators:
-
-       Children under 5: Sum of age groups 0-4 (both sexes)
-   
-       Working age (15-64): Sum of age groups 15-19 through 60-64 (both sexes)
-   
-       Elderly (65+): Sum of age groups 65-69 and above (both sexes)
-   
-       Total population: Sum of all age groups (both sexes)
-   
-       Sex ratio: Male population / Female population * 100
-   
-       Dependency ratio: (children_under_5 + elderly_65plus) / working_age * 100
-   
-       Child dependency ratio: children_under_5 / working_age * 100
-   
-       Elderly dependency ratio: elderly_65plus / working_age * 100
-   
-       Proportion children: children_under_5 / total_population * 100
-   
-       Proportion elderly: elderly_65plus / total_population * 100
-
-1.4 Output Generation
-Your pipeline must produce:
-
-Primary Dataset - A clean CSV file (kenya_population_by_county.csv) with columns:
-
-    county: County name (as in GADM)
-
-    year
-
-    total_population
-
-    children_under_5
-
-    working_age
-
-    elderly_65plus
-
-    sex_ratio
-
-    dependency_ratio
-
-    child_dependency_ratio
-
-    elderly_dependency_ratio
-
-    pct_children
-
-    pct_elderly
-
-Visualizations:
-
- - A map of 2025 at the raster level, specifying at least 1 age and sex group (your choice)
-
- - A simple timeseries plot of total population for the time period 2021-2025 at the country level
-
- - A scatterplot of children under 5 vs county size (county size can be roughly calculated via the geometry available in the json files)
-
-
-Validation Log - A log file documenting:
-
- - All files processed
-
- - Any missing files or data issues
-
- - Validation steps performed
-
- - Decisions made for handling data quality issues
-
-1.5 Environment Setup
-Include a way to recreate your environment:
-
- - Python: requirements.txt or environment.yml
-
- - R: renv.lock or DESCRIPTION
-
-## Part 2: Interactive Dashboard
-
-Build a functional, user-friendly dashboard that allows exploration of Kenya's population data.
-Requirements:
-
-2.1 Dashboard Framework
-Choose one of these options:
-
- - Python: Streamlit, Dash, or Flask + Plotly
-
- - R: Shiny
-
-2.2 Required Features
-
-Filters (must work together):
-
- - County dropdown (optional - allows selecting specific counties for comparison)
-
- - Year
-
- - Sex toggle: Male, Female, or Total
-
- - Indicator dropdown: Choose which metric to display on the map:
-
-        Total Population
-
-        Children under 5
-
-        Elderly 65+
-
-        Dependency Ratio
-
-        Sex Ratio
-
-        Child Dependency Ratio
-
-        Elderly Dependency Ratio
-
-Visualizations (must update based on filters, visualize at least two of the following options):
-
- - Choropleth Map (primary visualization):
-
-        Display Kenya's counties colored by the selected indicator
-
-        Color scale should be intuitive (e.g., sequential for population counts, diverging for ratios)
-
-        Hover tooltips showing county name and all key indicators
-
-        Click on a county to update other visualizations
-
- - Age Pyramid (secondary visualization):
-
-        Show population distribution by age group
-
-        Split by sex (if sex filter is not "Total")
-
-        Update when clicking on a specific county
-
-        If multiple counties selected, show combined or stacked distribution
-
- - County Comparison Bar Chart:
-
-        Compare selected counties (or top/bottom counties) on key indicators
-
-        Allow sorting by different metrics
-
-        Show at least 3-5 counties for comparison
-
- - Summary Statistics Cards (dashboard header):
-
-        Total population (for selected county/countries)
-
-        Dependency ratio
-
-        Child population (number and %)
-
-        Elderly population (number and %)
-
-        Sex ratio
-
-2.3 Public Health Context
-Include an "Interpretation" section on the dashboard that:
-
- - Explains the public health significance of dependency ratios
-
- - Describes how age structure affects health service planning:
-
-        High child population → need for immunization, pediatric care, nutrition programs
-
-        High elderly population → need for chronic disease management, geriatric care
-
-        High dependency ratio → economic implications for health financing
-
- - Suggests at least two policy implications based on the data patterns you observe
-
-## Part 3: Documentation and Software Engineering
-
-3.1 Repository Structure
-Your GitHub repository should have a clear, organized structure. For example:
 ```
-kenya-population-analysis/
-├── README.md
-├── requirements.txt                # or renv.lock
+Ahadi/
+├── README.md                          # This file
+├── requirements.txt                   # Python dependencies (pinned versions)
+├── environment.yml                    # Conda environment spec
 ├── .gitignore
-├── src/
+├── .env.example                       # Environment variables template
+├── .vercelignore                      # Excludes backend from Vercel build
+├── ai_disclosure.txt                  # Part 0 — AI use disclosure
+├── Dockerfile                         # Backend container image
+├── docker-compose.yml                 # Full-stack local dev (backend + frontend)
+│
+├── src/                               # Python data pipeline (Part 1)
 │   ├── __init__.py
-│   ├── pipeline.py                 # main pipeline script
-│   ├── data_access.py              # downloading/accessing data
-│   ├── validation.py               # data validation functions
-│   ├── aggregation.py              # raster aggregation to counties
-│   └── utils.py                    # helper functions
-├── dashboard/
-│   ├── app.py                      # dashboard entry point
-│   ├── components/                 # dashboard UI components
-│   └── assets/                     # CSS, images
+│   ├── utils.py                       # Logging, URL builders, shared constants
+│   ├── data_access.py                 # WorldPop streaming download + caching
+│   ├── validation.py                  # CRS checks, file completeness, data quality
+│   ├── aggregation.py                 # Raster → county zonal statistics
+│   └── pipeline.py                   # Pipeline orchestration + static plots
+│
+├── backend/                           # FastAPI REST API (Part 2 backend)
+│   ├── __init__.py
+│   ├── database.py                    # SQLAlchemy engine + session factory
+│   ├── models.py                      # ORM model: PopulationRecord
+│   ├── schemas.py                     # Pydantic v2 request/response schemas
+│   ├── crud.py                        # All DB queries + computed analytics
+│   ├── main.py                        # FastAPI app, CORS, all endpoints
+│   └── ai_insights.py                 # Groq LLM integration for AI panel
+│
+├── frontend/                          # Angular 19 dashboard (Part 2 frontend)
+│   ├── vercel.json                    # Vercel deployment config
+│   ├── package.json
+│   ├── angular.json
+│   ├── tsconfig.json
+│   └── src/
+│       ├── index.html
+│       ├── main.ts
+│       ├── styles.scss                # Global design system (dark + light theme)
+│       ├── environments/
+│       │   ├── environment.ts         # dev → http://localhost:8000
+│       │   └── environment.prod.ts    # prod → relative URL
+│       └── app/
+│           ├── app.component.*        # Root shell, top nav, dark/light toggle
+│           ├── app.config.ts          # Angular providers (HTTP, ECharts)
+│           ├── app.routes.ts          # Lazy-loaded routes
+│           ├── core/
+│           │   ├── api.service.ts     # All HTTP calls to FastAPI backend
+│           │   └── theme.service.ts   # Dark/light mode (persisted to localStorage)
+│           ├── models/
+│           │   └── population.model.ts  # TypeScript interfaces
+│           ├── features/
+│           │   ├── dashboard/         # Main analytics dashboard page
+│           │   └── pipeline-runner/   # Pipeline trigger + status UI
+│           └── components/
+│               ├── choropleth-map/    # Leaflet Kenya choropleth + city markers
+│               ├── age-pyramid/       # ECharts horizontal butterfly chart
+│               ├── bar-chart/         # ECharts top-10 county comparison
+│               ├── summary-cards/     # KPI metric cards
+│               ├── interpretation/    # Public health context panel
+│               └── timeseries-chart/  # ECharts animated area chart
+│
 ├── data/
-│   ├── raw/                        # (optional - for caching downloads)
+│   ├── gadm41_KEN_2.json              # Kenya GADM Level 2 county boundaries
+│   ├── raw/                           # Downloaded WorldPop GeoTIFFs (cached, gitignored)
 │   └── processed/
-│       ├── kenya_population_by_county.csv
+│       ├── kenya_population_by_county.csv  # Pipeline primary output
 │       └── validation_log.txt
+│
 ├── outputs/
-│   ├── summary_report.html
-│   └── figures/                    # optional static figures
+│   └── figures/
+│       ├── map_2025_male_0_to_4.png
+│       ├── timeseries_total_population.png
+│       └── scatterplot_children_vs_county_size.png
+│
 └── tests/
+    ├── __init__.py
     ├── test_validation.py
     └── test_aggregation.py
 ```
 
-3.2 README.md Requirements
-Your README must include:
+---
 
-1. Project Description:
+## Quick Start
 
-- Brief overview of what this project does
+### Option A — Docker (full stack, recommended)
 
-- The public health context
+```bash
+git clone https://github.com/Vinylango25/Ahadi_DS_Assessment
+cd Ahadi_DS_Assessment
 
-2. Setup Instructions:
+# Configure environment
+cp .env.example .env
+# Edit .env — add GROQ_API_KEY for AI insights (optional)
 
-- How to clone the repository
+# Build and start everything
+docker-compose up --build
+```
 
-- How to install dependencies (Python/R)
+| Service | URL |
+|---------|-----|
+| Frontend dashboard | http://localhost:4200 |
+| Backend API | http://localhost:8000 |
+| API docs (Swagger) | http://localhost:8000/docs |
 
-- How to set up the environment (virtual environment, renv, etc.)
+### Option B — Manual setup
 
-3. Usage Instructions:
+**1. Create Python environment**
 
-- How to run the data pipeline (e.g., python src/pipeline.py or Rscript src/pipeline.R)
+```bash
+# Conda (recommended — handles GDAL/rasterio binaries)
+conda env create -f environment.yml
+conda activate ahadi-analytics
 
-- How to launch the dashboard (e.g., streamlit run dashboard/app.py or shiny::runApp())
+# Or pip
+python -m venv .venv
+source .venv/bin/activate        # macOS/Linux
+.venv\Scripts\activate           # Windows
+pip install -r requirements.txt
+```
 
-- Expected output location and format
+**2. Run the data pipeline**
 
-3.3 Code Quality
+```bash
+# Downloads WorldPop rasters, validates, aggregates, saves CSV + plots
+python -m src.pipeline
+```
 
-- Use functions/classes to organize code logically
+Outputs:
+- `data/processed/kenya_population_by_county.csv`
+- `data/processed/validation_log.txt`
+- `outputs/figures/*.png`
 
-- Include docstrings for all functions explaining inputs, outputs, and purpose
+**3. Start the backend API**
 
-- Add comments for non-obvious code sections
+```bash
+# First run loads the CSV into SQLite automatically
+uvicorn backend.main:app --reload --port 8000
+```
 
-- Follow a consistent style guide (PEP 8 for Python, tidyverse style for R)
+**4. Start the Angular frontend**
 
-- Use meaningful variable names
+```bash
+cd frontend
+npm install
+npm start
+# → http://localhost:4200
+```
 
-- Handle errors gracefully with appropriate try-except blocks or condition checks
+---
 
-3.4 Version Control
+## Part 0 — AI Use Disclosure
 
-- Use Git with clear, descriptive commit messages
+Full disclosure is in [`ai_disclosure.txt`](./ai_disclosure.txt). Summary:
 
-- Show a logical progression of work (not just one big commit)
+- **Kiro CLI (Claude Sonnet)** was used throughout the session for architecture planning, code scaffolding, build debugging, and deployment configuration
+- **Groq API (LLaMA 3.1-8b-instant)** powers the runtime AI insights feature inside the dashboard (requires user-provided `GROQ_API_KEY`)
+- All AI-generated code was reviewed, build-verified (`ng build`, `pytest`), and manually inspected before each commit
+- All design decisions, data modelling choices, and architectural trade-offs were directed by the candidate
 
-- Commit at meaningful milestones:
+---
 
-        Initial setup and structure
+## Part 1 — Reproducible Data Pipeline
+
+### 1.1 Programmatic Data Access (`src/data_access.py`)
 
-        Data access implementation
+Constructs WorldPop Kenya URL pattern:
+```
+https://data.worldpop.org/GIS/AgeSex_structures/Global_2000_2020_1km_UNadj/
+  unconstrained/{year}/KEN/ken_{sex}_{age}_{year}.tif
+```
 
-        Validation and cleaning
+- **Years:** 2021–2025 | **Sexes:** `m`, `f` | **Ages:** 0, 1, 5, 10, …, 80
+- Streaming download with `.part` safety files (atomic rename on completion)
+- **Caching:** skips files already present in `data/raw/` — no redundant downloads
+- 3 retry attempts with exponential backoff; graceful 404 handling and logging
 
-        Aggregation logic
+### 1.2 Data Validation & Cleaning (`src/validation.py`)
 
-        Dashboard development
+- Parses filenames to extract sex, age group, and year
+- Verifies all expected age-sex combinations are present per year; logs any missing
+- Verifies GADM boundaries CRS = EPSG:4326; reprojection applied if mismatched
+- Checks all rasters for negative values and implausibly zero-populated county areas
+- All decisions and outcomes written to `data/processed/validation_log.txt`
+
+### 1.3 Spatial Aggregation (`src/aggregation.py`)
+
+Uses `rasterio` + `shapely` mask operations for zonal sum per county polygon.
+
+Computes all 10 required demographic indicators:
+
+| Indicator | Formula |
+|-----------|---------|
+| `total_population` | Σ all age groups, both sexes |
+| `children_under_5` | Σ age 0–4, both sexes |
+| `working_age` | Σ age 15–64, both sexes |
+| `elderly_65plus` | Σ age 65+, both sexes |
+| `sex_ratio` | (male / female) × 100 |
+| `dependency_ratio` | (children + elderly) / working_age × 100 |
+| `child_dependency_ratio` | children / working_age × 100 |
+| `elderly_dependency_ratio` | elderly / working_age × 100 |
+| `pct_children` | children / total × 100 |
+| `pct_elderly` | elderly / total × 100 |
+
+County area (km²) computed via EPSG:6933 equal-area projection.
+
+### 1.4 Output Generation
+
+| Output | Path |
+|--------|------|
+| Population CSV | `data/processed/kenya_population_by_county.csv` |
+| Validation log | `data/processed/validation_log.txt` |
+| 2025 raster map — male age 0–4 | `outputs/figures/map_2025_male_0_to_4.png` |
+| National timeseries 2021–2025 | `outputs/figures/timeseries_total_population.png` |
+| Children vs county area scatter | `outputs/figures/scatterplot_children_vs_county_size.png` |
+
+---
+
+## Part 2 — Interactive Dashboard
+
+### Dashboard Features
 
-        Documentation and cleanup
+#### Filters — all interactive, work together
+- County dropdown — all 47 counties + national view
+- Year slider — 2021 to 2025
+- Sex toggle — Male / Female / Total
+- Indicator dropdown — 11 demographic indicators
 
+#### Visualisations
 
-## Evaluation Criteria
+| Component | Technology | Description |
+|-----------|-----------|-------------|
+| **Choropleth Map** | Leaflet.js | County fill by selected indicator; CARTO tile layer; dark + light themes; hover tooltips; 10 major city overlays; 8 regional boundary layers |
+| **Age Pyramid** | ECharts | Horizontal butterfly chart split by sex; updates on county selection |
+| **County Bar Chart** | ECharts | Top-10 county comparison with gradient fill; sortable by any indicator |
+| **Summary Cards** | Angular signals | 5 KPI cards: total population, dependency ratio, children %, elderly %, sex ratio |
+| **Timeseries Chart** | ECharts | Animated area chart for 2021–2025 trend of selected county |
+| **Interpretation Panel** | Angular | Collapsible public health context sections with Kenya-specific policy implications |
+| **AI Insights Panel** | Groq LLM | Natural-language analysis of a selected county's demographic profile |
+| **Pipeline Runner** | Angular + FastAPI | Trigger and monitor the Python pipeline directly from the UI |
 
-Your submission will be evaluated on the following criteria, aligned with the AHADI Data Scientist competencies:
-      |Competency|Weight|Excellent|Good|Needs Improvement|
-      |Communication & AI Use|15%|Clear AI disclosure, insightful health implications, professional presentation|Basic AI disclosure, clear presentation|Missing AI disclosure, unclear communication|
-      |Reproducible Pipeline|25%|Fully automated data access, comprehensive validation, efficient raster aggregation, clear logging|Mostly automated, good validation, works correctly|Manual steps, minimal validation, inefficient or broken|
-      |Data Handling & Spatial Analysis|20%|Impeccable handling of missing data, correct CRS handling, efficient raster extraction|Handles main cases correctly, minor issues|Errors in aggregation, incorrect projections, data loss|
-      |Dashboard & Visualization|25%|Polished, intuitive, all filters work, meaningful health context, professional appearance|Functional, clear visuals, minor usability issues|Broken features, confusing design, missing health context|
-      |Code Quality & Documentation|15%|Modular, well-documented, clean structure, excellent README|Somewhat organized, adequate documentation|Spaghetti code, no comments, poor structure|
+#### Public Health Interpretation
 
+The Interpretation component explains:
+- **Dependency ratio** — economic and health financing implications when a large share of the population is non-working-age
+- **High child population** (northern arid counties) → need for immunisation outreach, paediatric staffing, nutrition
+- **High elderly proportion** (Central, Nyanza) → chronic disease management, geriatric services, palliative care
+- **Policy implications** derived directly from county-level data patterns visible in the dashboard
 
+### Backend API Endpoints
 
-Resources and Tips
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/counties` | List all 47 counties |
+| GET | `/api/population` | Query with filters: county, year, sex |
+| GET | `/api/summary/{county}/{year}` | Summary stats for one county/year |
+| GET | `/api/timeseries/{county}` | Population trend 2021–2025 |
+| GET | `/api/age-pyramid/{county}/{year}` | Full age-sex breakdown |
+| GET | `/api/comparison` | Multi-county comparison |
+| GET | `/api/choropleth/{year}/{indicator}` | All counties for map layer |
+| POST | `/api/ai-insights` | Groq LLM-generated county narrative |
+| POST | `/api/pipeline/run` | Trigger the data pipeline |
+| GET | `/api/pipeline/status` | Pipeline run status |
 
-R Libraries to Consider:
+---
 
-    sf - Spatial operations
+## Part 3 — Code Quality & Documentation
 
-    terra or raster - Raster data handling
+### Style Standards
+- **Python:** PEP 8, type hints throughout, docstrings on all public functions, `try/except` error handling
+- **TypeScript:** Angular strict mode, standalone components, signals API, RxJS `catchError` in services
+- **SCSS:** BEM-inspired naming, CSS custom properties for theming, responsive breakpoints
 
-    tidyverse (dplyr, ggplot2, tidyr) - Data manipulation and visualization
+### Testing
 
-    shiny - Dashboard framework
+```bash
+# Activate environment first
+conda activate ahadi-analytics
 
-    leaflet - Interactive maps
+# Run full suite
+pytest tests/ -v --tb=short
 
-    httr - HTTP requests for data access
+# Run specific module
+pytest tests/test_validation.py -v
+pytest tests/test_aggregation.py -v
+```
 
-Python Libraries to Consider:
+| Test file | What it covers |
+|-----------|---------------|
+| `test_validation.py` | CRS detection, filename parsing, missing file flagging, negative value handling, zero-coverage checks |
+| `test_aggregation.py` | Zonal sum accuracy, indicator formula correctness, area computation in equal-area projection |
 
-    geopandas - Spatial operations
+### Commit History
 
-    rasterio or xarray - Raster data handling
+Commits follow logical assessment milestones:
 
-    pandas - Data manipulation
+```
+aa9bb4a  feat: initial project commit — 67 files, full project scaffold
+d907453  fix: update vercel.json to modern buildCommand/outputDirectory format
+492254d  fix: set framework null in vercel.json to prevent FastAPI auto-detection
+19d5a96  fix: add .vercelignore to exclude Python backend from Vercel build
+299cbb8  fix: add vercel.json to frontend/ for direct subdirectory deployment
+```
 
-    matplotlib, seaborn, plotly - Visualization
+---
 
-    streamlit or dash - Dashboard framework
+## Deployment
 
-    requests - HTTP requests for data access
+### Frontend — Vercel (live)
 
-General Tips:
+The Angular app deploys from the `frontend/` subdirectory to avoid Vercel auto-detecting FastAPI:
 
-- Start simple: Get basic data loading and aggregation working before adding complexity
+```bash
+# Requires: npm install -g vercel && vercel login
+vercel deploy --prod --yes --cwd frontend/
+```
 
-- Test with small data: Use a subset of age groups for initial development
+**Live URL:** https://frontend-sandy-tau-56.vercel.app
 
-- Document as you go: Write notes about decisions and assumptions
+> In production the frontend uses a relative `apiUrl: ''` — it expects the backend to be on the same origin. To point at a separate backend, set `apiUrl` in `frontend/src/environments/environment.prod.ts` before building.
 
-- Think about the user: Your dashboard should be intuitive for a Ministry of Health official
+### Backend — Docker / self-hosted
 
-- Be explicit about assumptions: If you need to make assumptions (e.g., about missing data), state them clearly in your README
+The FastAPI backend requires GDAL/rasterio native binaries and cannot run on Vercel's serverless platform.
 
-- Use version control: Commit frequently with meaningful messages
+| Platform | How to deploy |
+|----------|--------------|
+| **Local (Docker)** | `docker-compose up --build` |
+| **Railway** | Connect repo → set `GROQ_API_KEY` → deploy `Dockerfile` |
+| **Render** | New web service → Docker → set env vars |
+| **Any VPS** | `docker build -t ahadi . && docker run -p 8000:8000 ahadi` |
 
-Data Access Tips:
+---
 
-- The WorldPop directory may not support directory listing. You might need to construct URLs based on expected file patterns or use the full URL list if provided.
+## Environment Variables
 
+Copy `.env.example` to `.env`:
 
-Reproducibility Tip:
-Include a script that checks your environment and installs required packages automatically. This demonstrates attention to reproducibility.
+```bash
+cp .env.example .env
+```
 
-_Tip:_ Focus on a **logical pipeline** and a **simple but effective dashboard**.
-We are interested in how you structure the workflow, design for scalability, and turn population data into clear, interpretable insights for decision-making.
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GROQ_API_KEY` | Optional | Enables AI insights panel. Free at https://console.groq.com |
+| `GROQ_MODEL` | Optional | Default: `llama-3.1-8b-instant` |
+| `DATABASE_URL` | No | Default: `sqlite:///./backend/ahadi.db` |
+| `API_HOST` | No | Default: `0.0.0.0` |
+| `API_PORT` | No | Default: `8000` |
+| `ALLOWED_ORIGINS` | No | CORS origins, default: `*` |
 
-Submission Instructions
+---
 
-- Create a public GitHub repository for your work
+## Tests
 
-- Complete as many of the tasks described above, to high quality, as possible in a three hour period
+```bash
+conda activate ahadi-analytics
+pytest tests/ -v --tb=short
+```
 
-- Ensure your repository follows the structure outlined in Part 3.1
+---
 
-- Make sure your README is comprehensive and clear
+## Assumptions & Decisions
 
-- Submit the repository URL through the provided submission form
+| Decision | Rationale |
+|----------|-----------|
+| Angular 19 over Streamlit/Dash | Demonstrates full-stack capability; richer interactivity; closer to production quality |
+| SQLite over PostgreSQL | Zero-setup for assessment; ORM is compatible with Postgres for production upgrade |
+| ECharts over Plotly | Lighter bundle, better animation support for age pyramids and timeseries |
+| Deploy frontend only to Vercel | Backend requires GDAL/GeoPandas native binaries; Vercel is serverless only |
+| Deploy from `frontend/` subdirectory | Vercel auto-detects FastAPI from root-level `requirements.txt`, overriding our Angular config |
+| WorldPop unconstrained 1km | Specified in assessment; unconstrained files include all residential and non-residential areas |
+| Drop (not impute) missing age-sex files | Logged in `validation_log.txt`; imputation would introduce false precision in a 5-year projection series |
+| Equal-area (EPSG:6933) for area calculation | Preserves area accuracy for Kenya's equatorial geography vs WGS84 which distorts area |
 
-Good luck! We look forward to seeing your work.
+---
 
+*Submitted by: Vinylango25 | Submission date: 2026-08-20*
