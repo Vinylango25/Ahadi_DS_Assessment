@@ -80,6 +80,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly countySummary  = signal<CountySummary | null>(null);
   readonly timeseriesData = signal<TimeseriesData | null>(null);
 
+  /** All 5 indicator choropleth totals/means for national KPI cards */
+  readonly allNationalValues = signal<Record<string, number>>({});
+
   // ── Loading flags ────────────────────────────────────────────
   readonly loadingMeta        = signal(true);
   readonly loadingChoropleth  = signal(false);
@@ -122,6 +125,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const topCounty = entries.find(e => e.value === max);
     return { total, max, topCounty };
   });
+
+  /**
+   * When no county is selected, synthesise a national-level CountySummary
+   * from all pre-loaded choropleth datasets so every KPI card shows data.
+   */
+  readonly nationalSummary = computed<CountySummary | null>(() => {
+    const vals = this.allNationalValues();
+    if (!Object.keys(vals).length) return null;
+    return {
+      county: 'Kenya',
+      year: this.selectedYear(),
+      total_population: vals['total_population'],
+      children_under_5: vals['children_under_5'],
+      elderly_65plus:   vals['elderly_65plus'],
+      dependency_ratio: vals['dependency_ratio'],
+      sex_ratio:        vals['sex_ratio'],
+      indicators:       vals,
+    } as CountySummary;
+  });
+
+  /** Summary passed to KPI cards: county-level when selected, national otherwise */
+  readonly displaySummary = computed<CountySummary | null>(() =>
+    this.selectedCounty() ? this.countySummary() : this.nationalSummary()
+  );
 
   constructor() {
     // Reload choropleth + comparison when year or indicator changes
@@ -184,6 +211,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.api.getComparison(year, indicator, 10)
       .pipe(takeUntil(this.destroy$), catchError(() => of(null)), finalize(() => this.loadingComparison.set(false)))
       .subscribe(d => this.comparisonData.set(d));
+
+    // Pre-fetch all 5 KPI indicators in parallel so national summary cards always show data
+    const KPI_INDICATORS = ['total_population', 'children_under_5', 'elderly_65plus', 'dependency_ratio', 'sex_ratio'];
+    forkJoin(
+      Object.fromEntries(KPI_INDICATORS.map(ind => [ind, this.api.getChoropleth(year, ind).pipe(catchError(() => of(null)))]))
+    ).pipe(takeUntil(this.destroy$)).subscribe((results: {[k: string]: ChoroplethData | null}) => {
+      const nat: Record<string, number> = {};
+      for (const [ind, data] of Object.entries(results)) {
+        if (!data) continue;
+        const vals = data.entries.map(e => e.value).filter(isFinite);
+        if (!vals.length) continue;
+        const isRatio = /ratio|sex_ratio/.test(ind);
+        nat[ind] = isRatio
+          ? vals.reduce((s, v) => s + v, 0) / vals.length
+          : vals.reduce((s, v) => s + v, 0);
+      }
+      this.allNationalValues.set(nat);
+    });
 
     this.loadTimeseries();
   }

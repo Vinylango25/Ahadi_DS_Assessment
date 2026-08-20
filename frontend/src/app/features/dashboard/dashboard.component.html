@@ -132,9 +132,9 @@
       </div>
     } @else {
       <app-summary-cards
-        [summary]="countySummary()"
+        [summary]="displaySummary()"
         [year]="selectedYear()"
-        [county]="selectedCounty()">
+        [county]="selectedCounty() || 'Kenya'">
       </app-summary-cards>
     }
   </section>

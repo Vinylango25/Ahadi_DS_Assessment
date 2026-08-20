@@ -51,11 +51,11 @@ export class SummaryCardsComponent implements OnChanges {
     const s = this.summary;
     const indicators = s?.indicators ?? {};
 
-    const totalPop = s?.total_population ?? indicators['total_population'] ?? null;
-    const depRatio = s?.dependency_ratio ?? indicators['dependency_ratio'] ?? null;
-    const childrenU5 = indicators['children_under_5'] ?? null;
-    const elderly = indicators['elderly_65plus'] ?? null;
-    const sexRatio = s?.sex_ratio ?? indicators['sex_ratio'] ?? null;
+    const totalPop   = s?.total_population ?? indicators['total_population'] ?? null;
+    const depRatio   = s?.dependency_ratio ?? indicators['dependency_ratio'] ?? null;
+    const childrenU5 = s?.children_under_5 ?? indicators['children_under_5'] ?? null;
+    const elderly    = s?.elderly_65plus   ?? indicators['elderly_65plus']   ?? null;
+    const sexRatio   = s?.sex_ratio        ?? indicators['sex_ratio']        ?? null;
 
     this.cards.set([
       {

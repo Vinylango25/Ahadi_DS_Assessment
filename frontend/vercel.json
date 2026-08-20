@@ -3,6 +3,11 @@
   "framework": null,
   "buildCommand": "npm install && npm run build",
   "outputDirectory": "dist/browser",
+  "functions": {
+    "api/ai/county-insight.js": { "memory": 256, "maxDuration": 30 },
+    "api/ai/national-insight.js": { "memory": 256, "maxDuration": 30 },
+    "api/ai/query.js": { "memory": 256, "maxDuration": 30 }
+  },
   "routes": [
     {
       "src": "/(.*\\.(json|geojson|js|css|png|svg|ico|woff2?))",
