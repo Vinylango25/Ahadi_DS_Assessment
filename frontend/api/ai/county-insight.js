@@ -38,7 +38,7 @@ function callGroq(systemPrompt, userPrompt) {
         { role: 'user',   content: userPrompt   },
       ],
       temperature: 0.3,
-      max_tokens:  700,
+      max_tokens:  900,
     });
 
     const req = https.request({
@@ -110,11 +110,29 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const SYSTEM = `You are a public health data analyst specialising in Kenya's demographic trends.
-Generate concise, insightful narrative commentary (2-3 short paragraphs) on the demographic data provided.
-Focus on what the numbers mean for health service planning, notable patterns, and concrete policy recommendations.
-Use plain English — no jargon. Keep it actionable for Ministry of Health officials.
-Do NOT repeat the raw numbers verbatim; interpret them.`;
+  const SYSTEM = `You are a senior public health data analyst specialising in Kenya's demographic trends.
+Generate exactly 5 numbered, actionable insights based on the demographic data provided.
+
+Format your response as:
+1. **[Short Title]** — Insight text (2-3 sentences, specific and actionable).
+2. **[Short Title]** — Insight text.
+3. **[Short Title]** — Insight text.
+4. **[Short Title]** — Insight text.
+5. **[Short Title]** — Insight text.
+
+Cover these 5 angles in order:
+1. Population size & growth — what it means for facility capacity and service delivery planning
+2. Child health (under-5) — immunisation, nutrition, maternal & child health service demand
+3. Elderly & ageing — NCDs, elder care, pension/social protection needs
+4. Sex ratio & gender — gender equity in services, migration implications, maternal/paternal health
+5. Dependency ratio & sustainability — fiscal and health system pressure, workforce planning
+
+Rules:
+- Be SPECIFIC — link every number to a real planning consequence
+- Each insight must be actionable by a Ministry of Health official
+- Plain English, no jargon
+- Do NOT just repeat the numbers — interpret and recommend`;
+
 
   const USER = `County: ${county}  |  Year: ${year}
 

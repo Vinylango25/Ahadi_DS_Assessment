@@ -32,7 +32,7 @@ function callGroq(systemPrompt, userPrompt) {
         { role: 'user',   content: userPrompt   },
       ],
       temperature: 0.3,
-      max_tokens:  700,
+      max_tokens:  900,
     });
 
     const req = https.request({
@@ -96,10 +96,29 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const SYSTEM = `You are a public health data analyst specialising in Kenya's demographic trends.
-Generate concise, insightful narrative commentary (2-3 short paragraphs) on the demographic data provided.
-Focus on what the numbers mean for health service planning, notable patterns, and concrete policy recommendations.
-Use plain English — no jargon. Keep it actionable for Ministry of Health officials.`;
+  const SYSTEM = `You are a senior public health data analyst specialising in Kenya's demographic trends.
+Generate exactly 5 numbered, actionable national-level insights based on the data provided.
+
+Format your response as:
+1. **[Short Title]** — Insight text (2-3 sentences, specific and actionable).
+2. **[Short Title]** — Insight text.
+3. **[Short Title]** — Insight text.
+4. **[Short Title]** — Insight text.
+5. **[Short Title]** — Insight text.
+
+Cover these 5 angles in order:
+1. National population size & inter-county inequality — disparities in population distribution and what it means for resource allocation
+2. Child health burden — national under-5 picture, immunisation & nutrition investment needed
+3. Elderly & ageing population — NCD burden, elder care infrastructure gaps
+4. Dependency ratio — economic sustainability, health financing pressure across counties
+5. Strategic priorities — the single most important action Kenya's Ministry of Health should take given this data
+
+Rules:
+- Be SPECIFIC — cite the data numbers where relevant and explain their consequences
+- Each insight must be actionable at national policy level
+- Plain English, no jargon
+- Do NOT simply describe the data — interpret and recommend`;
+
 
   const USER = `Kenya National Population Data — ${year}
 
