@@ -142,8 +142,54 @@ export class StaticDataService {
   getAgePyramid(county: string, year: number): Observable<AgePyramidData> {
     return this.bundle$.pipe(
       map(b => {
-        const key     = `${county}_${year}`;
-        const raw     = b.age_pyramid[key];
+        // National aggregate: sum all counties for the given year
+        if (!county || county === 'national') {
+          const allEntries = Object.values(b.age_pyramid)
+            .filter((r: any) => r.year === year);
+
+          if (!allEntries.length) {
+            return { county: 'Kenya', year, age_groups: [], rows: [] } as AgePyramidData;
+          }
+
+          // Collect all age group names (preserve order from first entry)
+          const ageGroupNames: string[] = (allEntries[0] as any).age_groups.map((g: any) => g.age_group);
+
+          // Sum male + female across all counties for each age group
+          const summed = ageGroupNames.map(ag => {
+            let male = 0, female = 0;
+            for (const entry of allEntries as any[]) {
+              const grp = (entry.age_groups as any[]).find(g => g.age_group === ag);
+              if (grp) { male += grp.male || 0; female += grp.female || 0; }
+            }
+            return { age_group: ag, male, female };
+          });
+
+          const totalMale   = summed.reduce((s, r) => s + r.male,   0);
+          const totalFemale = summed.reduce((s, r) => s + r.female, 0);
+          const total       = totalMale + totalFemale;
+
+          const rows = summed.map(r => ({
+            age_group:  r.age_group,
+            male:       r.male,
+            female:     r.female,
+            male_pct:   total > 0 ? (r.male   / total) * 100 : 0,
+            female_pct: total > 0 ? (r.female / total) * 100 : 0,
+          }));
+
+          return {
+            county:           'Kenya',
+            year,
+            age_groups:       rows,
+            rows,
+            total_male:       totalMale,
+            total_female:     totalFemale,
+            total_population: total,
+          } as AgePyramidData;
+        }
+
+        // Single county
+        const key = `${county}_${year}`;
+        const raw = b.age_pyramid[key];
         if (!raw) {
           return { county, year, age_groups: [], rows: [] } as AgePyramidData;
         }

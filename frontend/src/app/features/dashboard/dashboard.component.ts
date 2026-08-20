@@ -163,7 +163,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const county = this.selectedCounty();
         void this.selectedYear();
         if (county) { this.loadCountyDetail(); }
-        else { this.agePyramidData.set(null); this.countySummary.set(null); }
+        else { this.loadNationalPyramid(); this.countySummary.set(null); }
       },
       { allowSignalWrites: true },
     );
@@ -261,6 +261,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.api.getTimeseries(this.selectedCounty() || undefined)
       .pipe(takeUntil(this.destroy$), catchError(() => of(null)), finalize(() => this.loadingTimeseries.set(false)))
       .subscribe(d => this.timeseriesData.set(d));
+  }
+
+  private loadNationalPyramid(): void {
+    this.loadingPyramid.set(true);
+    this.api.getAgePyramid('', this.selectedYear())
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => of(null)),
+        finalize(() => this.loadingPyramid.set(false)),
+      )
+      .subscribe(d => this.agePyramidData.set(d));
   }
 
   // ── Filter handlers ──────────────────────────────────────────

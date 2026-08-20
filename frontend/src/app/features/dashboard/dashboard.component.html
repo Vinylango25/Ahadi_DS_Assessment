@@ -222,15 +222,15 @@
         @if (selectedCounty()) {
           <span class="panel-badge primary">{{ selectedCounty() }}</span>
         } @else {
-          <span class="panel-badge muted">Click map to select county</span>
+          <span class="panel-badge muted">Kenya · All Counties</span>
         }
       </div>
       @if (loadingPyramid()) {
         <div class="panel-loader"><div class="spinner"></div></div>
-      } @else if (agePyramidData()) {
+      } @else if (agePyramidData() && agePyramidData()!.age_groups?.length) {
         <app-age-pyramid
           [data]="agePyramidData()!"
-          [countyName]="selectedCounty()"
+          [countyName]="selectedCounty() || 'Kenya'"
           [sex]="selectedSex()">
         </app-age-pyramid>
       } @else {

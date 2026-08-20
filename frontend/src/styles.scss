@@ -8,12 +8,12 @@
 // ---------- CSS Custom Properties ---------------------------
 
 :root {
-  // --- Dark theme (default) ---
-  --bg:               #0a0e27;
-  --surface:          #151937;
-  --surface-hover:    #1e2447;
-  --elevated:         #252d57;
-  --elevated-2:       #2e3766;
+  // --- Dark theme (default) — AHADI brand colors #0E2332 ---
+  --bg:               #0e2332;
+  --surface:          #152d42;
+  --surface-hover:    #1c3854;
+  --elevated:         #234464;
+  --elevated-2:       #2a5075;
 
   --text-primary:     #e8eaf6;
   --text-secondary:   #9fa8da;
@@ -46,14 +46,14 @@
   --border:           rgba(159, 168, 218, 0.12);
   --border-strong:    rgba(159, 168, 218, 0.24);
 
-  --glass:            rgba(21, 25, 55, 0.80);
-  --glass-light:      rgba(37, 45, 87, 0.60);
+  --glass:            rgba(21, 45, 66, 0.80);
+  --glass-light:      rgba(35, 68, 100, 0.60);
 
   // Gradients
   --gradient-primary:    linear-gradient(135deg, #00d4aa 0%, #7c4dff 100%);
-  --gradient-surface:    linear-gradient(180deg, #151937 0%, #0a0e27 100%);
-  --gradient-card:       linear-gradient(135deg, rgba(21,25,55,0.9) 0%, rgba(10,14,39,0.9) 100%);
-  --gradient-hero:       linear-gradient(135deg, #0a0e27 0%, #151937 50%, #1e2447 100%);
+  --gradient-surface:    linear-gradient(180deg, #152d42 0%, #0e2332 100%);
+  --gradient-card:       linear-gradient(135deg, rgba(21,45,66,0.9) 0%, rgba(14,35,50,0.9) 100%);
+  --gradient-hero:       linear-gradient(135deg, #0e2332 0%, #152d42 50%, #1c3854 100%);
   --gradient-teal-glow:  radial-gradient(ellipse at top left, rgba(0,212,170,0.15) 0%, transparent 60%);
   --gradient-purple-glow:radial-gradient(ellipse at bottom right, rgba(124,77,255,0.12) 0%, transparent 60%);
 

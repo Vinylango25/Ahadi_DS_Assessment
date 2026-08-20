@@ -10,8 +10,8 @@ const GROQ_MODEL   = 'llama-3.1-8b-instant';
 
 function loadPopulationData() {
   const candidates = [
+    path.join(__dirname, '../population.json'),          // api/population.json
     path.join(__dirname, '../../dist/browser/population.json'),
-    path.join(__dirname, '../../../dist/browser/population.json'),
     path.join(process.cwd(), 'dist/browser/population.json'),
     path.join(process.cwd(), 'population.json'),
   ];
