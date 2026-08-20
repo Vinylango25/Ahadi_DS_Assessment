@@ -55,20 +55,18 @@ export class InterpretationComponent implements OnChanges {
   private buildSections(): void {
     const s = this.summary;
     const county = this.countyName || 'Kenya';
+    const isNational = !this.countyName;
     const indicators = s?.indicators ?? {};
 
-    // Dynamic insights
-    const dynamicInsights = this.generateDynamicInsights(s, county);
+    const dynamicInsights = this.generateDynamicInsights(s, county, isNational);
 
     const depRatio = s?.dependency_ratio ?? indicators['dependency_ratio'];
     const sexRatio = s?.sex_ratio ?? indicators['sex_ratio'];
-    const growthRate = null; // not in backend schema
-    const density = null; // not in backend schema
 
     this.sections.set([
       {
         id: 'dynamic',
-        title: `${county} Insights`,
+        title: isNational ? 'Kenya National Overview' : `${county} Insights`,
         icon: 'lightbulb',
         content: dynamicInsights,
         open: true,
@@ -80,10 +78,10 @@ export class InterpretationComponent implements OnChanges {
         content: [
           'The dependency ratio measures the proportion of dependants (children under 15 and elderly 65+) relative to the working-age population (15–64).',
           depRatio != null
-            ? `${county}'s dependency ratio of ${depRatio.toFixed(1)}% means that for every 100 working-age people, there are approximately ${depRatio.toFixed(0)} dependants.`
+            ? `${county}'s dependency ratio of ${depRatio.toFixed(1)} means for every 100 working-age people, there are approximately ${depRatio.toFixed(0)} dependants — placing direct pressure on health financing and social services.`
             : 'Kenya typically has a high dependency ratio driven by its young population structure — approximately 40% of the population is under 15.',
-          'A high dependency ratio strains social services, healthcare budgets, and economic productivity. It indicates the need for robust child health programmes and investment in education.',
-          'As the youth population grows into working age, a "demographic dividend" may emerge — a period of accelerated economic growth if adequate employment opportunities exist.',
+          'A high dependency ratio strains healthcare budgets and economic productivity. It signals the need for robust child health programmes, nutrition interventions, and investment in education.',
+          'As the youth population matures into working age, a "demographic dividend" may emerge — a period of accelerated economic growth if adequate employment and health infrastructure exist.',
         ],
         open: false,
       },
@@ -93,12 +91,12 @@ export class InterpretationComponent implements OnChanges {
         icon: 'elderly',
         content: [
           'Population age structure directly determines the disease burden and the mix of health services required at county level.',
-          'A young population (under-5 and under-15 bulge) demands strong maternal and child health (MCH) services, immunisation programmes, and nutrition interventions.',
-          'Kenya\'s 2019 census showed a median age of approximately 20 years nationally, indicating a predominantly young population.',
-          'Counties with older age structures face growing non-communicable disease (NCD) burdens: hypertension, diabetes, and cancer require long-term chronic disease management capacity.',
-          density != null
-            ? `${county}'s population density informs spatial planning for health facility distribution.`
-            : 'Population density varies widely across Kenya — from dense urban counties like Nairobi and Mombasa to sparse arid counties in the north.',
+          'A young population (high under-5 proportion) demands strong maternal and child health (MCH) services, immunisation programmes, and nutrition interventions.',
+          s?.children_under_5 != null && s?.total_population
+            ? `${county}'s under-5 population represents ${((s.children_under_5 / s.total_population) * 100).toFixed(1)}% of the total — ${s.children_under_5 / s.total_population > 0.15 ? 'a significant child health burden requiring prioritised paediatric investment' : 'a moderate child share with manageable MCH demands'}.`
+            : 'Counties with a high proportion of children under 5 require expanded immunisation outreach, nutrition programmes, and skilled birth attendant coverage.',
+          'Counties with older age structures face growing non-communicable disease (NCD) burdens: hypertension, diabetes, and cancer requiring long-term chronic disease management capacity.',
+          'Population density varies widely across Kenya — from dense urban counties like Nairobi and Mombasa to sparse arid counties in the north — requiring different service delivery models.',
         ],
         open: false,
       },
@@ -110,9 +108,9 @@ export class InterpretationComponent implements OnChanges {
           'The sex ratio (males per 100 females) reflects underlying biological, social, and migration patterns.',
           sexRatio != null
             ? `${county}'s sex ratio of ${sexRatio.toFixed(1)} indicates ${sexRatio > 100 ? 'more males than females' : sexRatio < 100 ? 'more females than males' : 'near parity'} — ${this.sexRatioContext(sexRatio)}`
-            : 'Nationally, Kenya\'s sex ratio is approximately 97–99 males per 100 females, indicating near parity with slight female majority.',
+            : 'Nationally, Kenya\'s sex ratio is approximately 97–99 males per 100 females, indicating near parity with a slight female majority.',
           'Divergent sex ratios often signal rural-urban migration patterns: males migrate to cities for employment, inflating urban sex ratios and depleting rural working-age male populations.',
-          'Gender-equitable health planning must address distinct needs: maternal health for women, occupational health and injury for male-dominated industries.',
+          'Gender-equitable health planning must address distinct needs: maternal and reproductive health for women, occupational health and injury prevention for male-dominated industries.',
         ],
         open: false,
       },
@@ -121,13 +119,11 @@ export class InterpretationComponent implements OnChanges {
         title: 'Policy Implications',
         icon: 'policy',
         content: [
-          '🏥 Health Facilities: Population growth projections should drive facility construction and staffing targets in the Kenya Health Sector Strategic Plan.',
-          '💊 Medicine Supply: Estimated population by age-sex cohort informs quantification of essential medicines, particularly for reproductive health, paediatrics, and geriatric care.',
+          '🏥 Health Facilities: Population projections (2021–2025) should drive facility construction and staffing targets in the Kenya Health Sector Strategic Plan.',
+          '💊 Medicine Supply: Age-sex cohort estimates inform quantification of essential medicines — particularly for reproductive health, paediatrics, and geriatric care.',
           '📚 Education: Under-15 population size determines school infrastructure requirements; tracking cohort sizes helps anticipate future workforce entry.',
-          growthRate != null
-            ? `📈 Growth Rate: ${county} is growing. ${this.growthContext(growthRate)}`
-            : '📈 Growth Rate: Kenya\'s national growth rate of ~2.2% per year (2019) means doubling time of ~32 years, requiring systematic long-term infrastructure planning.',
-          '🌍 Climate Resilience: Arid and semi-arid counties with sparse populations face distinct climate-health challenges requiring tailored interventions beyond national averages.',
+          '📈 Growth Trend: WorldPop 2021–2025 projections show continued population growth across all counties, requiring systematic long-term infrastructure investment.',
+          '🌍 Climate Resilience: Arid and semi-arid counties (ASAL) with sparse populations face distinct climate-health challenges requiring mobile outreach and community health worker models.',
         ],
         open: false,
       },
@@ -136,53 +132,80 @@ export class InterpretationComponent implements OnChanges {
         title: 'Data Notes',
         icon: 'info',
         content: [
-          'Population data is sourced from Kenya National Bureau of Statistics (KNBS) census records (2009, 2019) and intercensal projections.',
-          'Indicators are calculated from raw age-sex tabulations using standard demographic methods.',
+          'Population data is sourced from WorldPop Global Project 2025 (R2025A) — high-resolution gridded population estimates at 1km resolution.',
+          'Indicators are calculated from age-sex specific raster files covering 21 age bands (0–1, 1–4, 5–9 … 80+) for both male and female populations.',
+          'Data covers projection years 2021–2025, aggregated to Kenya\'s 47 county boundaries using the GADM administrative boundary dataset.',
           'County boundaries follow the 2010 Constitution of Kenya administrative units (47 counties).',
-          'Some indicators may show \'—\' where data was not collected, suppressed for confidentiality, or not yet ingested into the system.',
+          'Derived indicators (dependency ratio, sex ratio, pct_children, pct_elderly) are computed from the WorldPop age-sex counts using standard demographic formulae.',
         ],
         open: false,
       },
     ]);
   }
 
-  private generateDynamicInsights(s: CountySummary | null, county: string): string[] {
-    if (!s) {
+  private generateDynamicInsights(s: CountySummary | null, county: string, isNational: boolean): string[] {
+    if (!s || (!s.total_population && !s.dependency_ratio)) {
       return [
         `Select a county on the map to view tailored demographic insights for that county.`,
         `The insights panel will automatically populate with context-sensitive analysis based on the county's population structure, dependency ratio, and growth trends.`,
-        `National-level data for Kenya (2019 census) covers all 47 counties with indicators including age-sex structure, population density, and dependency ratios.`,
+        `Data is sourced from WorldPop 2021–2025 high-resolution gridded population estimates covering all 47 Kenya counties.`,
       ];
     }
 
     const insights: string[] = [];
     const indicators = s.indicators ?? {};
-    const depRatio = s.dependency_ratio ?? indicators['dependency_ratio'];
-    const sexRatio = s.sex_ratio ?? indicators['sex_ratio'];
-    const growthRate = null; // not in backend schema
+    const depRatio  = s.dependency_ratio ?? indicators['dependency_ratio'];
+    const sexRatio  = s.sex_ratio        ?? indicators['sex_ratio'];
+    const childPop  = s.children_under_5 ?? indicators['children_under_5'];
+    const elderly   = s.elderly_65plus   ?? indicators['elderly_65plus'];
+    const totalPop  = s.total_population ?? indicators['total_population'];
 
-    insights.push(`${county} had a total population of ${this.fmtLarge(s.total_population ?? 0)} in ${s.year}.`);
+    // 1. Population size
+    if (totalPop) {
+      insights.push(
+        isNational
+          ? `Kenya's estimated total population is ${this.fmtLarge(totalPop)} in ${s.year} (WorldPop R2025A). Sustained growth requires proportional expansion of health facilities, water, and sanitation infrastructure across all 47 counties.`
+          : `${county} had an estimated population of ${this.fmtLarge(totalPop)} in ${s.year}. ${totalPop > 1_000_000 ? 'As a high-population county, facility capacity and staff-to-patient ratios require close monitoring.' : 'Resource allocation should reflect the county\'s population size relative to national totals.'}`
+      );
+    }
 
+    // 2. Children under 5
+    if (childPop && totalPop) {
+      const pct = (childPop / totalPop * 100).toFixed(1);
+      insights.push(
+        `Children under 5 number ${this.fmtLarge(childPop)} (${pct}% of population). ${Number(pct) > 15 ? 'This high share demands prioritised investment in immunisation coverage, growth monitoring, and skilled birth attendants.' : 'Continued investment in MCH services is essential to sustain child survival gains.'}`
+      );
+    }
+
+    // 3. Dependency ratio
     if (depRatio != null) {
       if (depRatio > 80) {
-        insights.push(`High dependency ratio (${depRatio.toFixed(1)}%) — significant pressure on working-age population to support dependants.`);
+        insights.push(`High dependency ratio (${depRatio.toFixed(1)}) — for every 100 workers, ${depRatio.toFixed(0)} are dependants. This places heavy fiscal pressure on health and social services, demanding efficient public spending.`);
       } else if (depRatio < 50) {
-        insights.push(`Low dependency ratio (${depRatio.toFixed(1)}%) — relatively large working-age population, potential for demographic dividend.`);
+        insights.push(`Low dependency ratio (${depRatio.toFixed(1)}) — a large working-age population creates a window for demographic dividend. Investing in youth health, skills, and employment maximises this opportunity.`);
       } else {
-        insights.push(`Moderate dependency ratio (${depRatio.toFixed(1)}%) — balanced age structure with manageable social support demands.`);
+        insights.push(`Moderate dependency ratio (${depRatio.toFixed(1)}) — a reasonably balanced age structure. Sustained investment in preventive health and education will preserve this advantage.`);
       }
     }
 
+    // 4. Elderly population
+    if (elderly && totalPop) {
+      const pct = (elderly / totalPop * 100).toFixed(1);
+      insights.push(
+        `The elderly population (65+) stands at ${this.fmtLarge(elderly)} (${pct}%). ${Number(pct) > 4 ? 'Growing elderly numbers signal rising demand for NCD management (hypertension, diabetes, arthritis) and elder care services.' : 'While the elderly share is currently modest, proactive NCD screening programmes should be established now before the burden grows.'}`
+      );
+    }
+
+    // 5. Sex ratio
     if (sexRatio != null) {
-      if (sexRatio > 105) {
-        insights.push(`Male-skewed sex ratio (${sexRatio.toFixed(1)}) — may reflect male in-migration for economic activity.`);
-      } else if (sexRatio < 95) {
-        insights.push(`Female-skewed sex ratio (${sexRatio.toFixed(1)}) — may reflect male out-migration or higher male mortality.`);
-      }
+      insights.push(
+        sexRatio > 105
+          ? `Sex ratio of ${sexRatio.toFixed(1)} males per 100 females indicates male in-migration — likely driven by economic activity. Health services should address occupational health, male reproductive health, and injury prevention.`
+          : sexRatio < 95
+          ? `Sex ratio of ${sexRatio.toFixed(1)} males per 100 females suggests male out-migration. The higher female share increases demand for maternal health, gender-based violence services, and female-headed household support.`
+          : `Sex ratio of ${sexRatio.toFixed(1)} males per 100 females is near parity — health planning should maintain gender-balanced service provision covering both maternal health and male-specific health needs.`
+      );
     }
-
-    // growthRate not in backend schema — skip
-    // population_density not in backend schema — skip
 
     return insights;
   }
@@ -193,22 +216,6 @@ export class InterpretationComponent implements OnChanges {
     if (ratio < 90)  return 'strongly female-dominated, may indicate high male out-migration.';
     if (ratio < 95)  return 'slightly female-dominated within the normal demographic range.';
     return 'near perfect demographic parity.';
-  }
-
-  private growthContext(rate: number): string {
-    if (rate > 3.0) return 'Very rapid growth: infrastructure and services face significant expansion pressure.';
-    if (rate > 2.0) return 'Above-average growth: sustained investment in health, education, and housing required.';
-    if (rate > 1.0) return 'Moderate growth: manageable with consistent planning and investment.';
-    if (rate > 0)   return 'Slow growth: stable population — focus on quality of services.';
-    return 'Population decline or stabilisation — potential economic concerns.';
-  }
-
-  private densityContext(density: number): string {
-    if (density > 1000) return 'Very high density — urban county requiring intensive urban health services.';
-    if (density > 200)  return 'High density — significant urbanisation with mixed urban-rural service needs.';
-    if (density > 50)   return 'Moderate density — balanced rural-urban service delivery.';
-    if (density > 10)   return 'Low density — rural county requiring outreach services.';
-    return 'Very sparse — ASAL county requiring mobile and outreach health solutions.';
   }
 
   private fmtLarge(n: number): string {
