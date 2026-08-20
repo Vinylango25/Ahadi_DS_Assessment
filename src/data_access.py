@@ -273,16 +273,18 @@ def build_all_urls(
 # ---------------------------------------------------------------------------
 
 def list_available_files(raw_dir: Path = RAW_DATA_DIR) -> List[Path]:
-    """Return all WorldPop Kenya TIFs in the raw data directory.
+    """Return all WorldPop Kenya male/female TIFs in the raw data directory.
 
-    Supports both old (UNadj) and new (R2025A) naming conventions.
+    Returns only 'm' and 'f' sex-band TIFs (not the 't' total band) so the
+    aggregation layer doesn't double-count. Supports both old (UNadj) and new
+    (R2025A) naming conventions.
     """
     if not raw_dir.exists():
         logger.warning("Raw data directory does not exist: %s", raw_dir)
         return []
     files = sorted(
-        list(raw_dir.glob("ken_*_*_*_1km_UNadj.tif")) +
-        list(raw_dir.glob("ken_*_*_*_CN_1km_R2025A_UA_v1.tif"))
+        list(raw_dir.glob("ken_[mf]_*_*_1km_UNadj.tif")) +
+        list(raw_dir.glob("ken_[mf]_*_*_CN_1km_R2025A_UA_v1.tif"))
     )
     logger.info("Found %d TIF files in %s.", len(files), raw_dir)
     return files

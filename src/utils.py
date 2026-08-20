@@ -37,12 +37,17 @@ WORLDPOP_ZIP_FILENAME: str = "ken_agesex_structures_{year}_CN_1km_R2025A_UA_v1.z
 
 # Individual TIF filename pattern inside the zip (and on disk after extraction)
 # Files are named: ken_{sex}_{age}_{year}_CN_1km_R2025A_UA_v1.tif
-WORLDPOP_TIF_PATTERN: str = "ken_{sex}_{age}_{year}_CN_1km_R2025A_UA_v1.tif"
+# Age codes are ZERO-PADDED to 2 digits: 00, 01, 05, 10, 15, ..., 80, 85, 90
+WORLDPOP_TIF_PATTERN: str = "ken_{sex}_{age:02d}_{year}_CN_1km_R2025A_UA_v1.tif"
+
+# Total-sex band pattern (sex = 't', includes all ages 00-90)
+WORLDPOP_TOTAL_TIF_PATTERN: str = "ken_t_{age:02d}_{year}_CN_1km_R2025A_UA_v1.tif"
 
 # Supported parameter ranges
 SUPPORTED_YEARS: List[int] = [2021, 2022, 2023, 2024, 2025]
 SUPPORTED_SEXES: List[str] = ["m", "f"]
-SUPPORTED_AGES: List[int] = [0, 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80]
+# R2025A dataset age groups: 0, 1, 5, 10, 15, ..., 80, 85, 90
+SUPPORTED_AGES: List[int] = [0, 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90]
 
 
 # ---------------------------------------------------------------------------
@@ -147,17 +152,22 @@ def get_processed_filepath(filename: str) -> Path:
 def build_worldpop_filename(sex: str, age: int, year: int) -> str:
     """Construct the WorldPop Kenya raster filename (R2025A dataset).
 
-    The naming convention for the new dataset is::
+    The naming convention for the R2025A dataset uses ZERO-PADDED age codes::
 
-        ken_{sex}_{age}_{year}_CN_1km_R2025A_UA_v1.tif
+        ken_{sex}_{age:02d}_{year}_CN_1km_R2025A_UA_v1.tif
+
+    Examples: ``"ken_m_00_2021_CN_1km_R2025A_UA_v1.tif"`` (age 0),
+              ``"ken_f_05_2021_CN_1km_R2025A_UA_v1.tif"`` (age 5),
+              ``"ken_m_10_2021_CN_1km_R2025A_UA_v1.tif"`` (age 10).
 
     Args:
         sex:  Sex code — ``"m"`` (male) or ``"f"`` (female).
-        age:  Age-group start in years: 0, 1, 5, 10, 15, …, 80.
+        age:  Age-group start in years: 0, 1, 5, 10, 15, …, 80, 85, 90.
         year: Reference year, e.g. 2021.
 
     Returns:
-        Filename string, e.g. ``"ken_m_0_2021_CN_1km_R2025A_UA_v1.tif"``.
+        Filename string with zero-padded age, e.g.
+        ``"ken_m_00_2021_CN_1km_R2025A_UA_v1.tif"``.
 
     Raises:
         ValueError: If *sex*, *age*, or *year* are not in the supported sets.
@@ -171,6 +181,27 @@ def build_worldpop_filename(sex: str, age: int, year: int) -> str:
         raise ValueError(f"year must be one of {SUPPORTED_YEARS}, got {year}")
 
     return WORLDPOP_TIF_PATTERN.format(sex=sex, age=age, year=year)
+
+
+def build_worldpop_total_filename(age: int, year: int) -> str:
+    """Construct the WorldPop Kenya total-sex raster filename (R2025A).
+
+    The 't' (total) band files contain male + female combined::
+
+        ken_t_{age:02d}_{year}_CN_1km_R2025A_UA_v1.tif
+
+    Args:
+        age:  Age-group start in years: 0, 1, 5, 10, …, 90.
+        year: Reference year.
+
+    Returns:
+        Filename string, e.g. ``"ken_t_00_2021_CN_1km_R2025A_UA_v1.tif"``.
+    """
+    if age not in SUPPORTED_AGES:
+        raise ValueError(f"age must be one of {SUPPORTED_AGES}, got {age}")
+    if year not in SUPPORTED_YEARS:
+        raise ValueError(f"year must be one of {SUPPORTED_YEARS}, got {year}")
+    return WORLDPOP_TOTAL_TIF_PATTERN.format(age=age, year=year)
 
 
 def build_worldpop_zip_filename(year: int) -> str:
@@ -235,17 +266,19 @@ def parse_worldpop_filename(filename: str) -> Tuple[str, int, int]:
     """Extract (sex, age, year) metadata from a WorldPop Kenya filename.
 
     Supports both the legacy format::
-        ken_{sex}_{age}_{year}_1km_UNadj.tif
+        ken_{sex}_{age}_{year}_1km_UNadj.tif  (e.g. ken_m_0_2021_1km_UNadj.tif)
 
-    And the new R2025A format::
-        ken_{sex}_{age}_{year}_CN_1km_R2025A_UA_v1.tif
+    And the new R2025A format with zero-padded ages::
+        ken_{sex}_{age:02d}_{year}_CN_1km_R2025A_UA_v1.tif  (e.g. ken_m_00_2021_CN...)
+
+    Also handles the total-sex 't' band files.
 
     Args:
         filename: Bare filename or full path string.
 
     Returns:
-        Tuple of ``(sex, age, year)`` where *sex* is ``"m"`` or ``"f"``,
-        *age* is an integer, and *year* is a 4-digit integer.
+        Tuple of ``(sex, age, year)`` where *sex* is ``"m"``, ``"f"``, or
+        ``"t"`` (total), *age* is an integer, and *year* is a 4-digit integer.
 
     Raises:
         ValueError: If the filename does not match either expected pattern.
@@ -253,14 +286,14 @@ def parse_worldpop_filename(filename: str) -> Tuple[str, int, int]:
     base = Path(filename).stem  # strip directory and extension
     parts = base.split("_")
 
-    # New format: ken_m_0_2021_CN_1km_R2025A_UA_v1 → 9 parts
-    # Legacy format: ken_m_0_2021_1km_UNadj → 6 parts
+    # Format: ken_<sex>_<age>_<year>_... (at least 4 parts)
+    # age may be zero-padded: "00", "05", "10" → int() strips leading zeros
     if len(parts) >= 4 and parts[0] == "ken":
         try:
             sex = parts[1]
-            age = int(parts[2])
+            age = int(parts[2])   # int("00") == 0, int("05") == 5, works correctly
             year = int(parts[3])
-            if sex in SUPPORTED_SEXES:
+            if sex in SUPPORTED_SEXES or sex == "t":
                 return sex, age, year
         except (ValueError, IndexError):
             pass

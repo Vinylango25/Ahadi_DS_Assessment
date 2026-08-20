@@ -28,6 +28,8 @@ from utils import (
     ensure_directory,
     parse_worldpop_filename,
     setup_logging,
+    build_worldpop_filename,
+    build_worldpop_total_filename,
 )
 
 # ---------------------------------------------------------------------------
@@ -46,8 +48,8 @@ AGES_CHILDREN: List[int] = [0, 1]
 # Working-age population: 15–64 (i.e. age-group starts 15 through 60)
 AGES_WORKING: List[int] = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
 
-# Elderly 65+: age-group starts 65, 70, 75, 80
-AGES_ELDERLY: List[int] = [65, 70, 75, 80]
+# Elderly 65+: age-group starts 65, 70, 75, 80, 85, 90
+AGES_ELDERLY: List[int] = [65, 70, 75, 80, 85, 90]
 
 # Output CSV filename
 OUTPUT_CSV_NAME = "kenya_population_by_county.csv"
@@ -155,7 +157,6 @@ def aggregate_year(
 
     for sex in SUPPORTED_SEXES:
         for age in SUPPORTED_AGES:
-            from utils import build_worldpop_filename  # keep import local
             filename = build_worldpop_filename(sex, age, year)
             col = f"pop_{sex}_{age}"
 
@@ -198,7 +199,7 @@ def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame:
     ``total_population``      male_total + female_total
     ``children_under_5``      pop_{m,f}_{0,1} summed
     ``working_age``           pop_{m,f}_{15…60} summed
-    ``elderly_65plus``        pop_{m,f}_{65,70,75,80} summed
+    ``elderly_65plus``        pop_{m,f}_{65,70,75,80,85,90} summed
     ``sex_ratio``             male_total / female_total × 100
     ``dependency_ratio``      (children + elderly) / working_age × 100
     ``child_dependency_ratio``children / working_age × 100
