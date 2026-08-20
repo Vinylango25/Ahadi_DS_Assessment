@@ -1,0 +1,101 @@
+<!-- ============================================================
+     Ahadi Analytics — App Shell
+     ============================================================ -->
+<div class="app-shell" [attr.data-theme]="theme.isDark() ? 'dark' : 'light'">
+
+  <!-- ── Top navigation header ─────────────────────────────── -->
+  <header class="app-header">
+    <div class="header-inner">
+
+      <!-- Brand (logo slot — to be added) -->
+      <div class="brand">
+        <div class="brand-icon">
+          <span class="brand-letter">A</span>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Ahadi Analytics</span>
+          <span class="brand-sub">Kenya Population Intelligence</span>
+        </div>
+      </div>
+
+      <!-- Desktop navigation -->
+      <nav class="desktop-nav" aria-label="Main navigation">
+        @for (item of navItems; track item.path) {
+          <a class="nav-link"
+             [class.active]="isActive(item.path)"
+             [routerLink]="item.path">
+            <span class="material-symbols-rounded">{{ item.icon }}</span>
+            {{ item.label }}
+          </a>
+        }
+      </nav>
+
+      <!-- Header actions -->
+      <div class="header-actions">
+        <!-- Theme toggle -->
+        <button class="theme-btn"
+                (click)="toggleTheme()"
+                [title]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+                [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'">
+          <span class="material-symbols-rounded">
+            {{ theme.isDark() ? 'light_mode' : 'dark_mode' }}
+          </span>
+        </button>
+
+        <!-- Mobile hamburger -->
+        <button class="hamburger"
+                (click)="toggleMenu()"
+                [attr.aria-expanded]="mobileMenuOpen()"
+                aria-label="Toggle navigation">
+          <span class="material-symbols-rounded">
+            {{ mobileMenuOpen() ? 'close' : 'menu' }}
+          </span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Mobile drawer ─────────────────────────────────────── -->
+  @if (mobileMenuOpen()) {
+    <div class="drawer-backdrop" (click)="closeMobileMenu()"></div>
+    <aside class="mobile-drawer">
+      <div class="drawer-header">
+        <span class="drawer-title">Navigation</span>
+        <button class="drawer-close" (click)="closeMobileMenu()">
+          <span class="material-symbols-rounded">close</span>
+        </button>
+      </div>
+      <nav class="drawer-nav">
+        @for (item of navItems; track item.path) {
+          <a class="drawer-link"
+             [class.active]="isActive(item.path)"
+             [routerLink]="item.path"
+             (click)="closeMobileMenu()">
+            <span class="material-symbols-rounded">{{ item.icon }}</span>
+            <span class="drawer-link-content">
+              <span class="drawer-link-label">{{ item.label }}</span>
+              <span class="drawer-link-desc">{{ item.desc }}</span>
+            </span>
+          </a>
+        }
+      </nav>
+    </aside>
+  }
+
+  <!-- ── Main content ──────────────────────────────────────── -->
+  <main class="main-content">
+    <router-outlet />
+  </main>
+
+  <!-- ── Footer ────────────────────────────────────────────── -->
+  <footer class="app-footer">
+    <span>© 2025 Ahadi Analytics</span>
+    <span class="dot">·</span>
+    <span>Data: WorldPop 2021–2025 (unconstrained 1km)</span>
+    <span class="dot">·</span>
+    <span>Boundaries: GADM 4.1</span>
+    <span class="dot">·</span>
+    <span>AI: Groq LLaMA 3.1</span>
+  </footer>
+
+</div>

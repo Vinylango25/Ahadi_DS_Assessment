@@ -1,0 +1,307 @@
+<!-- ============================================================
+     Ahadi Kenya Population Analytics — Dashboard Template
+     ============================================================ -->
+<div class="dashboard">
+
+  <!-- ── Page Header ─────────────────────────────────────────── -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        Kenya Population Analytics
+        <span class="title-year-badge">{{ selectedYear() }}</span>
+      </h1>
+      <p class="page-sub">
+        Demographic insights across all 47 counties · WorldPop 2021–2025
+        @if (selectedCounty()) {
+          <span class="county-badge">
+            <span class="material-symbols-rounded">location_on</span>
+            {{ selectedCounty() }}
+            <button class="clear-btn" (click)="onClearCounty()" title="Clear county">×</button>
+          </span>
+        }
+      </p>
+    </div>
+    @if (nationalStats(); as stats) {
+      <div class="header-kpis">
+        <div class="header-kpi">
+          <span class="hkpi-label">Kenya Total</span>
+          <span class="hkpi-value">{{ stats.total | number:'1.0-0' }}</span>
+        </div>
+        <div class="header-kpi accent">
+          <span class="hkpi-label">Top County</span>
+          <span class="hkpi-value">{{ stats.topCounty?.county ?? '—' }}</span>
+        </div>
+      </div>
+    }
+  </header>
+
+  <!-- ── Error banner ─────────────────────────────────────────── -->
+  @if (errorMessage()) {
+    <div class="error-banner">
+      <span class="material-symbols-rounded">error_outline</span>
+      {{ errorMessage() }}
+      <button class="retry-btn" (click)="loadChoroplethAndComparison()">Retry</button>
+    </div>
+  }
+
+  <!-- ── Filter Bar ───────────────────────────────────────────── -->
+  <section class="filter-bar">
+
+    <!-- County -->
+    <div class="filter-group">
+      <label class="filter-label">
+        <span class="material-symbols-rounded">location_on</span> County
+      </label>
+      <select class="form-select" [value]="selectedCounty()"
+              (change)="onCountyChange($any($event.target).value)">
+        <option value="">All Counties</option>
+        @for (c of counties(); track trackByCounty($index, c)) {
+          <option [value]="c.name">{{ c.name }}</option>
+        }
+      </select>
+    </div>
+
+    <!-- Year -->
+    <div class="filter-group">
+      <label class="filter-label">
+        <span class="material-symbols-rounded">event</span> Year
+      </label>
+      <select class="form-select" [value]="selectedYear()"
+              (change)="onYearChange($any($event.target).value)">
+        @for (y of years(); track trackByYear($index, y)) {
+          <option [value]="y">{{ y }}</option>
+        }
+        @if (!years().length) {
+          @for (y of [2025,2024,2023,2022,2021]; track y) {
+            <option [value]="y">{{ y }}</option>
+          }
+        }
+      </select>
+    </div>
+
+    <!-- Sex -->
+    <div class="filter-group">
+      <label class="filter-label">
+        <span class="material-symbols-rounded">wc</span> Sex
+      </label>
+      <div class="sex-toggle" role="group">
+        @for (sex of sexOptions; track sex) {
+          <button class="toggle-btn" [class.active]="selectedSex() === sex"
+                  (click)="onSexChange(sex)">{{ sex }}</button>
+        }
+      </div>
+    </div>
+
+    <!-- Indicator -->
+    <div class="filter-group filter-wide">
+      <label class="filter-label">
+        <span class="material-symbols-rounded">analytics</span> Indicator
+      </label>
+      <select class="form-select" [value]="selectedIndicator()"
+              (change)="onIndicatorChange($any($event.target).value)">
+        @for (i of indicators(); track trackByIndicator($index, i)) {
+          <option [value]="i.id">{{ i.label }}</option>
+        }
+        @if (!indicators().length) {
+          <option value="total_population">Total Population</option>
+          <option value="dependency_ratio">Dependency Ratio</option>
+          <option value="children_under_5">Children Under 5</option>
+          <option value="elderly_65plus">Elderly 65+</option>
+          <option value="sex_ratio">Sex Ratio</option>
+          <option value="pct_children">% Children</option>
+          <option value="pct_elderly">% Elderly</option>
+        }
+      </select>
+    </div>
+
+    @if (loadingMeta()) {
+      <div class="filter-loader">
+        <div class="spinner-xs"></div>
+        <span>Loading…</span>
+      </div>
+    }
+  </section>
+
+  <!-- ── Summary KPI Cards ────────────────────────────────────── -->
+  <section class="kpi-row">
+    @if (loadingSummary()) {
+      <div class="kpi-skeletons">
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="kpi-skel skeleton"></div>
+        }
+      </div>
+    } @else {
+      <app-summary-cards
+        [summary]="countySummary()"
+        [year]="selectedYear()"
+        [county]="selectedCounty()">
+      </app-summary-cards>
+    }
+  </section>
+
+  <!-- ── Map Section (full-width primary) ─────────────────────── -->
+  <section class="map-section">
+    <div class="panel map-panel">
+      <div class="panel-head">
+        <h2 class="panel-title">
+          <span class="material-symbols-rounded">map</span>
+          Kenya Population Map
+        </h2>
+        <!-- Map / Timeseries tabs -->
+        <div class="tab-group">
+          <button class="tab-btn" [class.active]="activeMapTab() === 'map'"
+                  (click)="setMapTab('map')">
+            <span class="material-symbols-rounded">map</span> Map
+          </button>
+          <button class="tab-btn" [class.active]="activeMapTab() === 'timeseries'"
+                  (click)="setMapTab('timeseries')">
+            <span class="material-symbols-rounded">show_chart</span> 2021–2025 Trend
+          </button>
+        </div>
+        <span class="panel-badge">{{ currentIndicatorLabel() }}</span>
+      </div>
+
+      <!-- Map view -->
+      @if (activeMapTab() === 'map') {
+        <div class="map-body">
+          @if (loadingChoropleth()) {
+            <div class="panel-loader">
+              <div class="spinner"></div>
+              <span>Rendering choropleth…</span>
+            </div>
+          } @else {
+            <app-choropleth-map
+              [geoJsonData]="geoJsonData()"
+              [choroplethData]="choroplethMap()"
+              [indicatorName]="currentIndicatorLabel()"
+              [indicatorUnit]="currentIndicatorUnit()"
+              [isRatio]="isRatioIndicator()"
+              [selectedCounty]="selectedCounty()"
+              (countyClicked)="onCountyClick($event)">
+            </app-choropleth-map>
+          }
+        </div>
+      }
+
+      <!-- Timeseries view -->
+      @if (activeMapTab() === 'timeseries') {
+        <div class="ts-body">
+          <div class="ts-header">
+            <span class="ts-title">
+              {{ selectedCounty() ? selectedCounty() + ' —' : 'Kenya —' }}
+              Population Trend 2021–2025
+            </span>
+            @if (selectedCounty()) {
+              <span class="panel-badge primary">{{ selectedCounty() }}</span>
+            }
+          </div>
+          @if (loadingTimeseries()) {
+            <div class="panel-loader"><div class="spinner"></div></div>
+          } @else {
+            <app-timeseries-chart
+              [data]="timeseriesData()"
+              [county]="selectedCounty()"
+              [indicator]="selectedIndicator()">
+            </app-timeseries-chart>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ── Analysis Grid: Pyramid + Comparison ──────────────────── -->
+  <section class="analysis-grid">
+
+    <!-- Age Pyramid -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title">
+          <span class="material-symbols-rounded">people</span>
+          Population Pyramid
+        </h2>
+        @if (selectedCounty()) {
+          <span class="panel-badge primary">{{ selectedCounty() }}</span>
+        } @else {
+          <span class="panel-badge muted">Click map to select county</span>
+        }
+      </div>
+      @if (loadingPyramid()) {
+        <div class="panel-loader"><div class="spinner"></div></div>
+      } @else if (agePyramidData()) {
+        <app-age-pyramid
+          [data]="agePyramidData()!"
+          [countyName]="selectedCounty()"
+          [sex]="selectedSex()">
+        </app-age-pyramid>
+      } @else {
+        <div class="empty-state">
+          <span class="material-symbols-rounded empty-icon">person_search</span>
+          <p>Click any county on the map to view its age-sex population pyramid</p>
+        </div>
+      }
+    </div>
+
+    <!-- Bar Chart: County Comparison -->
+    <div class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title">
+          <span class="material-symbols-rounded">leaderboard</span>
+          County Ranking
+        </h2>
+        <span class="panel-badge">Top 10 · {{ selectedYear() }}</span>
+      </div>
+      @if (loadingComparison()) {
+        <div class="panel-loader"><div class="spinner"></div></div>
+      } @else if (comparisonData()) {
+        <app-bar-chart
+          [data]="comparisonData()!"
+          [indicatorName]="currentIndicatorLabel()"
+          [indicatorUnit]="currentIndicatorUnit()"
+          [title]="'Top 10 by ' + currentIndicatorLabel()"
+          [selectedCounty]="selectedCounty()"
+          (countyClicked)="onCountyClick($event)">
+        </app-bar-chart>
+      } @else {
+        <div class="empty-state">
+          <span class="material-symbols-rounded empty-icon">bar_chart</span>
+          <p>No comparison data. Ensure the data pipeline has been run.</p>
+        </div>
+      }
+    </div>
+
+  </section>
+
+  <!-- ── Bottom row: Interpretation + AI Panel ────────────────── -->
+  <section class="bottom-row">
+
+    <!-- Public Health Interpretation -->
+    <div class="interpretation-col">
+      <div class="section-label">
+        <span class="material-symbols-rounded">health_and_safety</span>
+        Public Health Interpretation
+      </div>
+      <app-interpretation
+        [countyName]="selectedCounty()"
+        [summary]="countySummary()"
+        [year]="selectedYear()"
+        [indicatorId]="selectedIndicator()"
+        [indicatorLabel]="currentIndicatorLabel()">
+      </app-interpretation>
+    </div>
+
+    <!-- AI Insights + NL Query -->
+    <div class="ai-col">
+      <div class="section-label">
+        <span class="material-symbols-rounded">auto_awesome</span>
+        AI Insights
+      </div>
+      <app-ai-panel
+        [countyName]="selectedCounty()"
+        [year]="selectedYear()"
+        [summary]="countySummary()">
+      </app-ai-panel>
+    </div>
+
+  </section>
+
+</div>

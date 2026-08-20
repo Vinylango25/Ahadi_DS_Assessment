@@ -1,0 +1,82 @@
+============================================================
+AI USE DISCLOSURE — Ahadi Kenya Population Analytics
+Assessment Submission
+Date: 2026-08-20
+============================================================
+
+1. TOOLS USED
+─────────────
+- Kiro CLI (Anthropic Claude — claude-sonnet-4-5 / auto-model)
+  Used for: code scaffolding, architecture planning, file generation
+  Session: Kiro CLI interactive chat session
+
+- Groq API (LLaMA 3.1-8b-instant)
+  Used for: runtime AI insights feature within the app
+  (requires GROQ_API_KEY to be configured by the user)
+
+2. HOW AI WAS USED
+──────────────────
+a) Architecture & planning
+   - Asked Kiro CLI to read the assessment README and design a full-stack
+     architecture: FastAPI backend + SQLite + Angular 20 frontend.
+   - AI suggested component breakdown, API endpoint design, data pipeline
+     structure, and deployment approach.
+
+b) Code generation (Kiro CLI)
+   - Python pipeline: src/data_access.py, src/validation.py,
+     src/aggregation.py, src/pipeline.py, src/utils.py
+   - FastAPI backend: backend/main.py, backend/models.py, backend/schemas.py,
+     backend/crud.py, backend/database.py, backend/ai_insights.py
+   - Angular frontend: all components, services, models, styles, routing
+   - Configuration: package.json, angular.json, tsconfig.json,
+     environment files, vercel.json
+
+c) Code review & iteration
+   - Reviewed all generated code for correctness against the README requirements
+   - Fixed schema mismatches between backend responses and frontend models
+   - Corrected truncated pipe chains and TypeScript errors
+   - Verified WorldPop URL patterns and caching logic
+
+d) Documentation
+   - README.md generated with AI assistance and reviewed for accuracy
+
+3. WHAT WAS REVIEWED AND VALIDATED
+────────────────────────────────────
+All AI-generated code was reviewed for:
+- Adherence to the README assessment requirements (Parts 1, 2, 3)
+- Data integrity: WorldPop URL construction, GADM boundary handling
+- API correctness: endpoint routes, response shapes, CORS configuration
+- Frontend: Angular 20 standalone component patterns, signal-based state
+- Security: read-only SQLite connections for NL queries, no secret exposure
+
+4. PROMPTS GIVEN (summary)
+───────────────────────────
+- "Read through the readme to understand what we want to do..."
+- "We need to have maps in Dashboard, for spatial data analysis..."
+- "In the frontend, please add a tab to run the pipeline and it should
+   also provide progress bars to monitor each stage of the pipeline."
+- "Let add AI insights where possible in dashboard and we can implement
+   natural SQL Query as well where a user will ask a question..."
+- Various correction prompts to fix TypeScript errors, schema mismatches,
+  and template issues.
+
+5. LIMITATIONS ACKNOWLEDGED
+────────────────────────────
+- AI-generated age pyramid data is estimated from aggregate indicators
+  (children_under_5, working_age, elderly_65plus), not per-band raster data.
+  This is noted in the API documentation and code comments.
+- WorldPop URL construction follows documented patterns but actual data
+  availability depends on the WorldPop server and year coverage.
+- The pipeline runner in the frontend provides approximate stage tracking
+  rather than real-time raster processing progress.
+
+6. HUMAN CONTRIBUTIONS
+────────────────────────
+- Project direction: requirements reading and design decisions
+- Logo and branding: Ahadi logo (to be added)
+- API key configuration: GROQ_API_KEY setup
+- Final deployment and testing
+
+============================================================
+END OF AI DISCLOSURE
+============================================================

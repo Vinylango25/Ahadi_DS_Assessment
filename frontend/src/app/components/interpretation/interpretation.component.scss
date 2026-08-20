@@ -1,0 +1,200 @@
+// ============================================================
+// Interpretation Panel styles
+// ============================================================
+
+:host {
+  display: block;
+}
+
+.interpretation-panel {
+  padding: var(--space-xl);
+  border-radius: var(--radius-lg, 16px);
+  background: var(--surface);
+  border: 1px solid rgba(0, 212, 170, 0.12);
+  border-left: 3px solid var(--primary);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  height: 100%;
+}
+
+// ── Panel Header ──────────────────────────────────────────────
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+
+  .material-symbols-rounded {
+    font-size: 20px;
+    color: var(--primary);
+  }
+}
+
+.panel-badge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+
+  &.primary {
+    background: var(--primary-alpha);
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+}
+
+// ── Sections List ─────────────────────────────────────────────
+.sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  max-height: 620px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 212, 170, 0.2) transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 212, 170, 0.2);
+    border-radius: 2px;
+  }
+}
+
+// ── Individual Section ────────────────────────────────────────
+.section {
+  border-radius: var(--radius-sm, 8px);
+  overflow: hidden;
+  border: 1px solid transparent;
+  transition: border-color var(--transition-fast);
+
+  &.open {
+    border-color: rgba(0, 212, 170, 0.15);
+    background: rgba(0, 212, 170, 0.03);
+  }
+}
+
+// ── Section Header (button) ───────────────────────────────────
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-primary);
+  transition: background var(--transition-fast);
+  border-radius: var(--radius-sm, 8px);
+  font-family: inherit;
+
+  &:hover {
+    background: var(--surface-hover);
+
+    .section-icon {
+      color: var(--primary);
+    }
+  }
+
+  &[aria-expanded='true'] {
+    .section-icon { color: var(--primary); }
+    .chevron      { color: var(--primary); }
+  }
+}
+
+.section-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.section-icon {
+  font-size: 16px;
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.section-title {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chevron {
+  font-size: 18px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+
+// ── Section Body ──────────────────────────────────────────────
+.section-body {
+  padding: 0 12px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+
+  .section.open & {
+    max-height: 600px;
+    padding: 0 12px 12px;
+  }
+
+  &[aria-hidden='true'] {
+    visibility: hidden;
+  }
+
+  &[aria-hidden='false'] {
+    visibility: visible;
+  }
+}
+
+.section-line {
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin: 0 0 8px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(0, 212, 170, 0.2);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// ── Responsive ────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .interpretation-panel {
+    padding: var(--space-lg);
+  }
+
+  .sections-list {
+    max-height: none;
+  }
+}

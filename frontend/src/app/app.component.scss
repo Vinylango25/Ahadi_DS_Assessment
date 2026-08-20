@@ -1,0 +1,311 @@
+// ============================================================
+// Ahadi — App Shell Styles
+// ============================================================
+
+// ── App container ─────────────────────────────────────────────
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+// ── Header ────────────────────────────────────────────────────
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 var(--divider);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  height: 60px;
+  padding: 0 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  gap: 16px;
+}
+
+// ── Brand ─────────────────────────────────────────────────────
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-letter {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #0a0e27;
+  letter-spacing: -0.02em;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: 480px) { display: none; }
+}
+
+.brand-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.brand-sub {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  line-height: 1;
+}
+
+// ── Desktop nav ───────────────────────────────────────────────
+.desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
+
+  @media (max-width: 640px) { display: none; }
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+
+  .material-symbols-rounded { font-size: 1.05rem; }
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    background: var(--primary-alpha);
+    color: var(--primary);
+
+    .material-symbols-rounded { color: var(--primary); }
+  }
+}
+
+// ── Header actions ────────────────────────────────────────────
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.theme-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  .material-symbols-rounded { font-size: 1.1rem; }
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+}
+
+.hamburger {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  .material-symbols-rounded { font-size: 1.2rem; }
+
+  &:hover { background: var(--surface-hover); color: var(--text-primary); }
+
+  @media (max-width: 640px) { display: flex; }
+}
+
+// ── Mobile drawer ─────────────────────────────────────────────
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1200;
+  width: min(320px, 85vw);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.25s ease;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.drawer-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.drawer-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .material-symbols-rounded { font-size: 1.1rem; }
+  &:hover { background: var(--surface-hover); }
+}
+
+.drawer-nav {
+  padding: 12px 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+  color: var(--text-secondary);
+
+  .material-symbols-rounded {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    width: 28px;
+    text-align: center;
+  }
+
+  &:hover { background: var(--surface-hover); color: var(--text-primary); }
+
+  &.active {
+    background: var(--primary-alpha);
+    color: var(--primary);
+    border-right: 3px solid var(--primary);
+  }
+}
+
+.drawer-link-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drawer-link-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: inherit;
+}
+
+.drawer-link-desc {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+// ── Main content ──────────────────────────────────────────────
+.main-content {
+  flex: 1;
+}
+
+// ── Footer ────────────────────────────────────────────────────
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--divider);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  background: var(--surface);
+}
+
+.dot {
+  opacity: 0.4;
+}
