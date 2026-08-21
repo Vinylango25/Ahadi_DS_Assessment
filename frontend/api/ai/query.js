@@ -7,7 +7,7 @@ const path  = require('path');
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GROQ_API_KEY   = process.env.GROQ_API_KEY   || '';
 // Use Groq with multiple model fallbacks — each has its own daily token limit
-const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'gemma2-9b-it', 'llama-3.1-8b-instant'];
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it', 'qwen-qwq-32b'];
 
 // ── Helpers ────────────────────────────────────────────────────
 function stripThinkTags(text) {
@@ -71,7 +71,7 @@ async function callGroq(prompt, maxTokens) {
     catch (err) {
       const msg = (err.message || '').toLowerCase();
       if (msg.includes('rate limit') || msg.includes('quota') || msg.includes('token') ||
-          msg.includes('tpd') || msg.includes('tpm') || msg.includes('does not exist')) {
+          msg.includes('tpd') || msg.includes('tpm') || msg.includes('does not exist') || msg.includes('decommissioned') || msg.includes('deprecated') || msg.includes('no longer supported')) {
         lastErr = err; continue;
       }
       throw err;
@@ -284,3 +284,4 @@ Provide 3-5 numbered insight points:`;
     res.status(200).json({ question, sql: null, results: [], answer: null, error: err.message });
   }
 };
+
