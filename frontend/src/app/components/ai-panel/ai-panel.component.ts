@@ -248,12 +248,12 @@ export class AIPanelComponent implements OnChanges {
   userQuestion = '';
 
   readonly exampleQuestions = [
-    'Top 5 most populous counties in 2025',
-    'Population trend for Nairobi 2021-2025',
-    'Counties where sex ratio exceeds 105',
-    'Compare Nairobi and Mombasa population profiles',
+    'All 47 counties ranked by total population 2025',
+    'Top 10 most populous counties in 2025',
+    'Counties with population over 1 million in 2025',
+    'Population trend for Nairobi 2021 to 2025',
+    'Counties where sex ratio exceeds 105 in 2025',
     'Average dependency ratio 2025',
-    'Scatter: population vs dependency ratio all counties',
   ];
 
   // ── Chart config derived from query results ──────────────
