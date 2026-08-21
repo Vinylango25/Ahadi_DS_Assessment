@@ -7,7 +7,7 @@ const path  = require('path');
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GROQ_API_KEY   = process.env.GROQ_API_KEY   || '';
 // Use Groq with multiple model fallbacks — each has its own daily token limit
-const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it', 'qwen-qwq-32b'];
+const GROQ_MODELS = ['qwen/qwen3.6-27b', 'gemma2-9b-it'];
 
 // ── Helpers ────────────────────────────────────────────────────
 function stripThinkTags(text) {
@@ -284,4 +284,5 @@ Provide 3-5 numbered insight points:`;
     res.status(200).json({ question, sql: null, results: [], answer: null, error: err.message });
   }
 };
+
 
