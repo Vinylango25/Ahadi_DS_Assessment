@@ -5,8 +5,9 @@ const fs    = require('fs');
 const path  = require('path');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-// Model chain — tried in order on quota/error
-const GEMINI_MODELS  = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
+const GROQ_API_KEY   = process.env.GROQ_API_KEY   || '';
+// Use Groq with multiple model fallbacks — each has its own daily token limit
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it', 'llama3-8b-8192'];
 
 // ── Helpers ────────────────────────────────────────────────────
 function stripThinkTags(text) {
@@ -35,52 +36,43 @@ function loadPopulationData() {
   return null;
 }
 
-// ── Gemini API call ────────────────────────────────────────────
-function callGeminiModel(model, prompt, maxTokens) {
+// ── Groq API call with model fallback chain ────────────────────
+function callGroqModel(model, prompt, maxTokens) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: maxTokens || 500,
-      },
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.1,
+      max_tokens: maxTokens || 500,
     });
-    const apiPath = `/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
     const req = https.request({
-      hostname: 'generativelanguage.googleapis.com',
-      path: apiPath,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      hostname: 'api.groq.com', path: '/openai/v1/chat/completions', method: 'POST',
+      headers: { 'Content-Type': 'application/json',
+                 'Authorization': `Bearer ${GROQ_API_KEY}`,
+                 'Content-Length': Buffer.byteLength(body) },
     }, (res) => {
-      let d = '';
-      res.on('data', c => d += c);
+      let d = ''; res.on('data', c => d += c);
       res.on('end', () => {
         try {
           const j = JSON.parse(d);
-          if (j.error) return reject(new Error(j.error.message || JSON.stringify(j.error)));
-          const text = j.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-          resolve(text);
+          if (j.error) return reject(new Error(j.error.message));
+          resolve(j.choices[0].message.content);
         } catch (e) { reject(e); }
       });
     });
-    req.on('error', reject);
-    req.write(body);
-    req.end();
+    req.on('error', reject); req.write(body); req.end();
   });
 }
 
-async function callGemini(prompt, maxTokens) {
+async function callGroq(prompt, maxTokens) {
   let lastErr;
-  for (const model of GEMINI_MODELS) {
-    try {
-      return await callGeminiModel(model, prompt, maxTokens);
-    } catch (err) {
+  for (const model of GROQ_MODELS) {
+    try { return await callGroqModel(model, prompt, maxTokens); }
+    catch (err) {
       const msg = (err.message || '').toLowerCase();
-      // Only retry on quota / rate / model errors
-      if (msg.includes('quota') || msg.includes('limit') || msg.includes('429') ||
-          msg.includes('not found') || msg.includes('unavailable')) {
-        lastErr = err;
-        continue;
+      if (msg.includes('rate limit') || msg.includes('quota') || msg.includes('token') ||
+          msg.includes('tpd') || msg.includes('tpm') || msg.includes('does not exist')) {
+        lastErr = err; continue;
       }
       throw err;
     }
@@ -240,8 +232,8 @@ module.exports = async (req, res) => {
   const question = (req.body?.question || '').trim();
   if (!question) { res.status(400).json({ detail: 'question is required' }); return; }
 
-  if (!GEMINI_API_KEY) {
-    res.status(200).json({ question, sql: null, results: [], answer: 'AI query requires GEMINI_API_KEY.', error: null });
+  if (!GROQ_API_KEY) {
+    res.status(200).json({ question, sql: null, results: [], answer: 'AI query requires GROQ_API_KEY.', error: null });
     return;
   }
 
@@ -251,7 +243,7 @@ module.exports = async (req, res) => {
   try {
     // Step 1 — parse query into a plan
     const planPrompt = `${QUERY_SYSTEM}\n\nQuestion: ${question}\n\nReturn only the JSON object:`;
-    const planRaw    = await callGemini(planPrompt, 400);
+    const planRaw    = await callGroq(planPrompt, 400);
     const plan       = extractJSON(planRaw);
 
     if (!plan) {
@@ -284,7 +276,7 @@ Data: ${JSON.stringify(results.slice(0, 20))}
 
 Provide 3-5 numbered insight points:`;
 
-    const rawAnswer = await callGemini(answerPrompt, 600);
+    const rawAnswer = await callGroq(answerPrompt, 600);
     const answer    = stripThinkTags(rawAnswer).replace(/\*\*/g, '').trim();
 
     res.status(200).json({ question, sql: `/* ${plan.intent} */`, results, answer, error: null });
