@@ -164,9 +164,23 @@ interface AIInsightResponse {
                     <span class="answer-card-title">AI Analysis</span>
                     <span class="answer-card-meta">{{ queryResult()!.sql }}</span>
                   </div>
-                  <div class="answer-insight-body"
-                       [innerHTML]="formatInsight(queryResult()!.answer!)">
-                  </div>
+                  @if (queryResult()!.points && queryResult()!.points.length >= 2) {
+                    <div class="insight-points" style="padding: 12px 14px 4px;">
+                      @for (pt of queryResult()!.points; track $index) {
+                        <div class="ip-card" [style.--ip-color]="pointColor($index)">
+                          <div class="ip-header">
+                            <span class="ip-badge">{{ $index + 1 }}</span>
+                            <span class="ip-title">{{ pt.title }}</span>
+                          </div>
+                          <p class="ip-body">{{ pt.body }}</p>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="answer-insight-body"
+                         [innerHTML]="formatInsight(queryResult()!.answer!)">
+                    </div>
+                  }
                 </div>
               }
 
