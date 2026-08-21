@@ -83,24 +83,64 @@ JSON schema:
 }
 
 CRITICAL RULES:
-- "bottom N" / "lowest N" / "least" = sort_dir "asc", limit N — ALWAYS filter_year 2025 if no year given
-- "top N" / "highest N" / "most" = sort_dir "desc", limit N — ALWAYS filter_year 2025 if no year given
-- "all counties" ranking questions MUST set filter_year to 2025 (or stated year)
-- "where X exceeds/above/over Y" = filters: [{field: X, op: "gt", value: Y}]
-- "where X below/under Y" = filters: [{field: X, op: "lt", value: Y}]
-- "average/mean" = aggregate "avg" on the relevant field
-- "total" national = aggregate "sum"
-- "how many counties" = aggregate "count"
-- "compare X and Y counties" = filter_county with first county name, limit 10 without year filter
-- Always set group_by_county: true for ranking/listing questions to avoid duplicate counties
-- For year-specific: use exact year; for "current"/"latest" use 2025
+- "bottom N" / "lowest N" / "least" → sort_dir "asc", limit N, filter_year 2025 (if no year given)
+- "top N" / "highest N" / "most" → sort_dir "desc", limit N, filter_year 2025 (if no year given)
+- "all counties" ranking → filter_year 2025, group_by_county true, limit 47
+- "where X exceeds/above/over Y" → filters: [{field: X, op: "gt", value: Y}]
+- "where X below/under Y" → filters: [{field: X, op: "lt", value: Y}]
+- "average/mean" → aggregate "avg" on the relevant field
+- "total" national → aggregate "sum"
+- "how many counties" → aggregate "count"
+- "trend" / "over years" / "2021 to 2025" / "all years" → set filter_county, sort_by "year", sort_dir "asc", limit 5, filter_year null, group_by_county false
+- "compare X and Y" / "X vs Y" → filter_county "X, Y" (comma-separated), filter_year 2025, group_by_county false, limit 10, sort_by "year", sort_dir "asc"
+- "profile" for one county → filter_county name, filter_year 2025, group_by_county false, limit 1
+- "scatter" / "correlation" → filter_year 2025, group_by_county true, limit 47, sort_by "total_population"
+- Always set group_by_county true for ranking/listing questions to avoid duplicate counties
+- For year-specific queries use exact year; for "current"/"latest" use 2025
 
 EXAMPLES:
-"bottom 5 counties by population" → {"filter_year":2025,"sort_by":"total_population","sort_dir":"asc","limit":5,"group_by_county":true,"intent":"Bottom 5 counties by population in 2025"}
+"bottom 5 counties by population" → {"filter_year":2025,"sort_by":"total_population","sort_dir":"asc","limit":5,"group_by_county":true,"filters":[],"intent":"Bottom 5 counties by population 2025"}
 "counties where sex ratio exceeds 105 in 2025" → {"filter_year":2025,"filters":[{"field":"sex_ratio","op":"gt","value":105}],"sort_by":"sex_ratio","sort_dir":"desc","limit":47,"group_by_county":true,"intent":"Counties with sex ratio above 105 in 2025"}
-"average dependency ratio across all counties 2025" → {"filter_year":2025,"aggregate":"avg","aggregate_field":"dependency_ratio","intent":"Average dependency ratio in 2025"}
-"how many counties have population over 1 million in 2025" → {"filter_year":2025,"aggregate":"count","filters":[{"field":"total_population","op":"gt","value":1000000}],"intent":"Count counties with population over 1M"}
-"population trend for Nairobi 2021-2025" → {"filter_county":"Nairobi","sort_by":"year","sort_dir":"asc","limit":5,"intent":"Nairobi population 2021-2025"}`;
+"average dependency ratio across all counties 2025" → {"filter_year":2025,"aggregate":"avg","aggregate_field":"dependency_ratio","filters":[],"intent":"Average dependency ratio in 2025"}
+"population trend for Nairobi 2021-2025" → {"filter_county":"Nairobi","filter_year":null,"sort_by":"year","sort_dir":"asc","limit":5,"group_by_county":false,"filters":[],"intent":"Nairobi population trend 2021-2025"}
+"compare Nairobi and Mombasa" → {"filter_county":"Nairobi, Mombasa","filter_year":2025,"sort_by":"total_population","sort_dir":"desc","limit":10,"group_by_county":false,"filters":[],"intent":"Nairobi vs Mombasa population comparison 2025"}
+"all 47 counties total population 2025" → {"filter_year":2025,"sort_by":"total_population","sort_dir":"desc","limit":47,"group_by_county":true,"filters":[],"intent":"All 47 counties ranked by population 2025"}
+"Nairobi population profile 2025" → {"filter_county":"Nairobi","filter_year":2025,"sort_by":null,"sort_dir":"desc","limit":1,"group_by_county":false,"filters":[],"intent":"Nairobi full population profile 2025"}
+"scatter population vs dependency ratio" → {"filter_year":2025,"sort_by":"total_population","sort_dir":"desc","limit":47,"group_by_county":true,"filters":[],"intent":"Population vs dependency ratio scatter 2025"}`;
+
+// ── All meaningful data fields (always included when relevant) ──
+const ALL_DATA_FIELDS = [
+  'total_population','children_under_5','working_age','elderly_65plus',
+  'sex_ratio','dependency_ratio','child_dependency_ratio','elderly_dependency_ratio',
+  'pct_children','pct_elderly','county_area_km2'
+];
+
+function pickFields(plan, filtersArr) {
+  // Fields explicitly referenced in the plan
+  const explicit = [
+    plan.sort_by,
+    plan.aggregate_field,
+    ...filtersArr.map(f => f.field),
+  ].filter(Boolean);
+
+  if (explicit.length > 0) {
+    // Always include the primary sort/filter field plus a few context fields
+    const extra = ['total_population','dependency_ratio','sex_ratio']
+      .filter(f => !explicit.includes(f));
+    return [...new Set([...explicit, ...extra])];
+  }
+
+  // No explicit fields — return all data fields (county profile / comparison queries)
+  return ALL_DATA_FIELDS;
+}
+
+function buildRow(r, fields) {
+  const row = { county: r.county, year: r.year };
+  for (const f of fields) {
+    if (r[f] != null) row[f] = typeof r[f] === 'number' ? +r[f].toFixed(2) : r[f];
+  }
+  return row;
+}
 
 function executeQuery(records, plan) {
   let rows = [...records];
@@ -110,33 +150,39 @@ function executeQuery(records, plan) {
   const yearToUse = plan.filter_year || (needsYearDefault ? 2025 : null);
   if (yearToUse) rows = rows.filter(r => r.year === yearToUse);
 
-  // County filter
+  // County filter — support multiple counties via comma or "and"/"vs"
   if (plan.filter_county) {
-    rows = rows.filter(r => r.county?.toLowerCase().includes(plan.filter_county.toLowerCase()));
+    const countyNames = plan.filter_county
+      .split(/,|\s+and\s+|\s+vs\.?\s+/i)
+      .map(c => c.trim().toLowerCase())
+      .filter(Boolean);
+    rows = rows.filter(r =>
+      countyNames.some(name => r.county?.toLowerCase().includes(name))
+    );
   }
 
-  // Multiple field filters
+  // Field filters
   const filtersArr = Array.isArray(plan.filters) ? plan.filters : [];
-  // Legacy single filter support
   if (plan.filter_field && plan.filter_op && plan.filter_value != null) {
     filtersArr.push({ field: plan.filter_field, op: plan.filter_op, value: plan.filter_value });
   }
   for (const f of filtersArr) {
     rows = rows.filter(r => {
       const v = r[f.field]; if (v == null) return false;
-      if (f.op === 'gt' || f.op === '>') return v > f.value;
-      if (f.op === 'lt' || f.op === '<') return v < f.value;
+      if (f.op === 'gt'  || f.op === '>')  return v > f.value;
+      if (f.op === 'lt'  || f.op === '<')  return v < f.value;
       if (f.op === 'gte' || f.op === '>=') return v >= f.value;
       if (f.op === 'lte' || f.op === '<=') return v <= f.value;
       return v === f.value;
     });
   }
 
-  // Aggregate (count, sum, avg, max, min)
+  // Aggregates
   if (plan.aggregate) {
     if (plan.aggregate === 'count') {
-      // Count unique counties
-      const unique = plan.group_by_county ? new Set(rows.map(r => r.county)).size : rows.length;
+      const unique = plan.group_by_county
+        ? new Set(rows.map(r => r.county)).size
+        : rows.length;
       return [{ count: unique, year: yearToUse || 'all' }];
     }
     if (plan.aggregate_field) {
@@ -148,12 +194,21 @@ function executeQuery(records, plan) {
         max: Math.max(...vals),
         min: Math.min(...vals),
       }[plan.aggregate];
-      // For max/min also find which county
       if (plan.aggregate === 'max' || plan.aggregate === 'min') {
         const matchRow = rows.find(r => r[plan.aggregate_field] === result);
-        return [{ [plan.aggregate]: +result.toFixed(2), field: plan.aggregate_field, county: matchRow?.county, year: matchRow?.year || yearToUse }];
+        return [{
+          [plan.aggregate]: +result.toFixed(2),
+          field: plan.aggregate_field,
+          county: matchRow?.county,
+          year: matchRow?.year || yearToUse,
+        }];
       }
-      return [{ [plan.aggregate]: +result.toFixed(2), field: plan.aggregate_field, counties_included: vals.length, year: yearToUse || 'all' }];
+      return [{
+        [plan.aggregate]: +result.toFixed(2),
+        field: plan.aggregate_field,
+        counties_included: vals.length,
+        year: yearToUse || 'all',
+      }];
     }
   }
 
@@ -164,31 +219,24 @@ function executeQuery(records, plan) {
   }
 
   const limit = Math.min(plan.limit || 10, 47);
-  const displayFields = [plan.sort_by, ...(filtersArr.map(f => f.field))].filter(Boolean);
-  const primaryField = displayFields[0] || 'total_population';
+  const fields = pickFields(plan, filtersArr);
 
-  // Deduplicate by county if group_by_county
-  if (plan.group_by_county !== false) {
+  // Deduplicate by county (ranking / all-county queries)
+  if (plan.group_by_county !== false && !plan.filter_county) {
     const seen = new Set();
     const out = [];
     for (const r of rows) {
       if (!seen.has(r.county)) {
         seen.add(r.county);
-        const row = { county: r.county, year: r.year };
-        for (const f of displayFields) { if (r[f] != null) row[f] = typeof r[f] === 'number' ? +r[f].toFixed(2) : r[f]; }
-        out.push(row);
+        out.push(buildRow(r, fields));
       }
       if (out.length >= limit) break;
     }
     return out;
   }
 
-  // No dedup — return all rows (e.g. trend over years for one county)
-  return rows.slice(0, limit).map(r => {
-    const row = { county: r.county, year: r.year };
-    for (const f of displayFields) { if (r[f] != null) row[f] = typeof r[f] === 'number' ? +r[f].toFixed(2) : r[f]; }
-    return row;
-  });
+  // No dedup — return all rows (trend / county comparison / time series)
+  return rows.slice(0, limit).map(r => buildRow(r, fields));
 }
 
 module.exports = async (req, res) => {
