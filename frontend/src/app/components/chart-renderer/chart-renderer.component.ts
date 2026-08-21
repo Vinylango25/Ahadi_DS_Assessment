@@ -78,8 +78,8 @@ export interface ChartConfig {
 }
 
 /**
- * Inspect query intent string + result rows and pick the best chart type.
- * Returns a ChartConfig that the component uses to build EChartsOption.
+ * Classify query intent + data shape → best chart type.
+ * Priority rules: aggregate → time-series → RANKING → all-counties → pct → explicit scatter → other
  */
 export function classifyChart(
   intent: string,
@@ -87,107 +87,119 @@ export function classifyChart(
 ): ChartConfig {
   if (!results?.length) return { kind: 'kpi-card', title: 'Result' };
 
-  const i = intent.toLowerCase();
-  const keys = Object.keys(results[0]);
+  const i  = intent.toLowerCase();
+  const keys    = Object.keys(results[0]);
   const numKeys = keys.filter(k => typeof results[0][k] === 'number' && k !== 'year');
   const hasCounty = keys.includes('county');
-  const hasYear = keys.includes('year');
+  const hasYear   = keys.includes('year');
   const n = results.length;
 
-  // Single aggregate → KPI card
+  // ── 1. Single aggregate value ──────────────────────────────
   if (n === 1 && numKeys.length <= 2 && !hasYear) {
     return { kind: 'kpi-card', title: intentTitle(intent) };
   }
-
-  // Multiple KPI fields on 1 row
-  if (n === 1 && numKeys.length > 2) {
-    return { kind: 'kpi-multi', title: intentTitle(intent) };
+  // Single county full profile → radar spider
+  if (n === 1 && numKeys.length >= 3) {
+    return { kind: 'radar', title: intentTitle(intent) };
   }
 
-  // Time-series for a single county
-  if (hasYear && hasCounty && n <= 10) {
+  // ── 2. Time-series / trend ─────────────────────────────────
+  if (hasYear && hasCounty) {
     const counties = [...new Set(results.map(r => r['county']))];
-    if (counties.length === 1) return { kind: 'line-area', title: intentTitle(intent) };
-    if (counties.length <= 5) return { kind: 'line-multi', title: intentTitle(intent) };
+    if (counties.length === 1 && n <= 10) return { kind: 'line-area',  title: intentTitle(intent) };
+    if (counties.length >= 2 && counties.length <= 6 && n <= 30) return { kind: 'line-multi', title: intentTitle(intent) };
   }
-
-  // Trend over years, no county label
   if (hasYear && !hasCounty && n <= 10) {
     return { kind: 'line-smooth-filled', title: intentTitle(intent) };
   }
 
-  // Percentage breakdowns (pct_ fields)
+  // ── 3. Explicit ranking keywords — BEFORE scatter ──────────
+  const isRanking =
+    i.includes('top ') || i.includes('bottom ') ||
+    i.includes('highest') || i.includes('lowest') ||
+    i.includes('most populous') || i.includes('rank') ||
+    i.includes('largest') || i.includes('smallest');
+  if (isRanking && n <= 20) {
+    return { kind: 'bar-horizontal', title: intentTitle(intent) };
+  }
+
+  // ── 4. All counties (≥ 30 rows) ────────────────────────────
+  if (n >= 30) {
+    const pctK = numKeys.filter(k => k.startsWith('pct_'));
+    if (pctK.length >= 2) return { kind: 'bar-stacked-pct', title: intentTitle(intent) };
+    if (i.includes('population')) return { kind: 'treemap', title: intentTitle(intent) };
+    return { kind: 'bar-gradient', title: intentTitle(intent) };
+  }
+
+  // ── 5. Percentage breakdowns ───────────────────────────────
   const pctKeys = numKeys.filter(k => k.startsWith('pct_'));
   if (pctKeys.length >= 2) return { kind: 'bar-stacked-pct', title: intentTitle(intent) };
   if (pctKeys.length === 1 && n <= 20) return { kind: 'donut', title: intentTitle(intent) };
 
-  // Dependency / elderly / children → pie / donut for small N
-  if ((i.includes('depend') || i.includes('elderly') || i.includes('child')) && n <= 10) {
-    return { kind: 'nightingale', title: intentTitle(intent) };
+  // ── 6. Explicitly requested scatter / correlation ──────────
+  if (i.includes('scatter') || i.includes('correlat') || i.includes('against')) {
+    return { kind: 'scatter-labeled', title: intentTitle(intent) };
   }
 
-  // Radar — single county with many metrics (profile query)
-  if (n <= 2 && numKeys.length >= 4) {
-    return { kind: n === 2 ? 'radar-multi' : 'radar', title: intentTitle(intent) };
-  }
-
-  // Bubble — population vs area (3 variables)
+  // ── 7. Bubble — area + population ─────────────────────────
   if (numKeys.includes('county_area_km2') || (i.includes('area') && i.includes('population'))) {
     return { kind: 'bubble', title: intentTitle(intent) };
   }
 
-  // Scatter — correlation between two numeric fields
-  if (numKeys.length >= 2 && (i.includes('correlat') || i.includes('vs') || i.includes('against'))) {
-    return { kind: 'scatter-labeled', title: intentTitle(intent) };
-  }
-
-  // Scatter default for two numeric fields
-  if (numKeys.length >= 2 && n >= 10) {
-    return { kind: 'scatter', title: intentTitle(intent) };
-  }
-
-  // Sex ratio → histogram-style distribution
+  // ── 8. Sex ratio distribution → histogram ─────────────────
   if (i.includes('sex ratio') || i.includes('sex_ratio')) {
     return { kind: 'histogram', title: intentTitle(intent) };
   }
 
-  // Growth / change → bar-negative (can be positive & negative)
+  // ── 9. Growth / change ─────────────────────────────────────
   if (i.includes('growth') || i.includes('change') || i.includes('delta')) {
     return { kind: 'bar-negative', title: intentTitle(intent) };
   }
 
-  // Ranking (top / bottom N, ≤15 rows)
-  if ((i.includes('top') || i.includes('bottom') || i.includes('highest') || i.includes('lowest') || i.includes('rank')) && n <= 20) {
+  // ── 10. Dependency / elderly / children small N → nightingale
+  if ((i.includes('depend') || i.includes('elderly') || i.includes('child')) && n <= 12) {
+    return { kind: 'nightingale', title: intentTitle(intent) };
+  }
+
+  // ── 11. County comparison (2-5 counties, many metrics) → radar
+  if (n >= 2 && n <= 6 && numKeys.length >= 3) {
+    return { kind: 'radar-multi', title: intentTitle(intent) };
+  }
+
+  // ── 12. Filter results (counties that exceed threshold) → horizontal bar
+  if (i.includes('where') || i.includes('exceed') || i.includes('above') || i.includes('below') || i.includes('over')) {
     return { kind: 'bar-horizontal', title: intentTitle(intent) };
   }
 
-  // All 47 counties → gradient vertical bar
-  if (n >= 30) return { kind: 'bar-gradient', title: intentTitle(intent) };
-
-  // Treemap — population size comparison
-  if (i.includes('population') && n >= 10) {
-    return { kind: 'treemap', title: intentTitle(intent) };
-  }
-
-  // Funnel for ordered list
+  // ── 13. Funnel for small ordered single-metric list ────────
   if (n <= 10 && numKeys.length === 1) return { kind: 'funnel', title: intentTitle(intent) };
 
-  // Default: horizontal bar for comparisons
+  // Default
   return { kind: 'bar-horizontal', title: intentTitle(intent) };
 }
 
 function intentTitle(intent: string): string {
   return intent
+    .replace(/^\/\*\s*|\s*\*\//g, '')
     .replace(/^(top|bottom|highest|lowest)\s+\d+\s+/i, '')
     .replace(/_/g, ' ')
     .replace(/\b\w/g, c => c.toUpperCase())
     .trim();
 }
 
-// ── Colour palettes ──────────────────────────────────────────
-const PALETTE_TEAL  = ['#00d4aa','#7c4dff','#ffab40','#40c4ff','#00e676','#ff5252','#ff8a65','#26c6da','#ab47bc','#66bb6a'];
-const PALETTE_WARM  = ['#ff6b6b','#feca57','#48dbfb','#ff9ff3','#54a0ff','#5f27cd','#01cbd6','#00d2d3','#ff9f43','#10ac84'];
-const PALETTE_COOL  = ['#4ecdc4','#45b7d1','#96ceb4','#ffeaa7','#dda0dd','#98d8c8','#f7dc6f','#bb8fce','#85c1e9','#f0b27a'];
+// ── Colour palettes — distinct per chart family ───────────────
+// Ranked bars: gold-to-teal gradient per bar
+const PALETTE_RANK   = ['#ffd700','#ffb347','#ff8c42','#00d4aa','#00b8a9','#7c4dff','#40c4ff','#00e676','#ff5252','#ff8a65',
+                         '#26c6da','#ab47bc','#66bb6a','#ef5350','#42a5f5','#ffca28'];
+// Line / area: vibrant distinct colours
+const PALETTE_TEAL   = ['#00d4aa','#7c4dff','#ff6b6b','#ffd700','#40c4ff','#00e676','#ff8a65','#ab47bc','#26c6da','#66bb6a'];
+// Warm: pie, rose, funnel
+const PALETTE_WARM   = ['#ff6b6b','#ffa94d','#ffd43b','#a9e34b','#4dabf7','#cc5de8','#f783ac','#ff8787','#63e6be','#74c0fc'];
+// Cool: grouped bars, parallel
+const PALETTE_COOL   = ['#4263eb','#1c7ed6','#0ca678','#f59f00','#e64980','#7950f2','#1098ad','#37b24d','#f76707','#c92a2a'];
+// Vivid: scatter, bubble, heatmap
+const PALETTE_VIVID  = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#8bc34a',
+                         '#ff5722','#607d8b','#795548','#cddc39','#03a9f4','#673ab7'];
 
 // ── Component ────────────────────────────────────────────────
 @Component({
