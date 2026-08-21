@@ -373,97 +373,79 @@ export class AIPanelComponent implements OnChanges {
   formatInsight(text: string): string {
     if (!text) return '';
 
-    // 1. Strip think tags, markdown bold, control chars (e.g. \x15 NAK from qwen)
+    // 1. Strip think tags, markdown bold/italic, control chars
     const clean = text
       .replace(/<think>[\s\S]*?<\/think>/gi, '')
       .replace(/<think>[\s\S]*/gi, '')
       .replace(/\*\*/g, '')
       .replace(/\*/g, '')
-      .replace(/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/g, ' ') // strip control chars except \n(\x0a)
+      .replace(/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/g, ' ')
       .replace(/ {2,}/g, ' ')
       .trim();
 
-    // 2. Split on \n\n — the API normalizeInsight() guarantees double-newlines between points.
-    const segments = clean
-      .split(/\n\n+/)
+    // 2. Split into numbered segments — works whether separated by \n\n or \n
+    //    Splits before each line that starts with a digit (1, 2, 3 …)
+    const rawSegments = clean
+      .split(/\n(?=\d+[\.\):\s]\s*\S)/)
       .map((s: string) => s.trim())
-      .filter((s: string) => /^\d+\.\s+/.test(s));
+      .filter((s: string) => /^\d+/.test(s));
 
     const points: Array<{num: string; title: string; body: string}> = [];
-    for (const seg of segments) {
-      // Use only em-dash (—) or en-dash (–) as title/body separator, NOT plain hyphen
-      // to avoid splitting "Inter-County" or "Non-Communicable" mid-title
-      const m = seg.match(/^(\d+)\.\s+([^\n]+?)\s*[\u2014\u2013]\s*([\s\S]+)$/);
-      if (m) {
-        points.push({
-          num:   m[1],
-          title: m[2].trim(),
-          body:  m[3].trim().replace(/\n/g, ' '),
-        });
+
+    for (const seg of rawSegments) {
+      const numMatch = seg.match(/^(\d+)[\.\):\s]+/);
+      const num = numMatch ? numMatch[1] : '';
+      const rest = numMatch ? seg.slice(numMatch[0].length).trim() : seg.trim();
+
+      // Strategy A: em-dash / en-dash on same line  →  "Title — body"
+      const emDash = rest.match(/^([^\n]{3,100}?)\s*[\u2014\u2013]\s*([\s\S]+)$/);
+      if (emDash) {
+        points.push({ num, title: emDash[1].trim(), body: emDash[2].trim().replace(/\n/g, ' ') });
+        continue;
       }
+
+      // Strategy B: " - " (space-hyphen-space) separator
+      const hyphen = rest.match(/^([^\n]{3,100}?)\s+-\s+([\s\S]+)$/);
+      if (hyphen) {
+        points.push({ num, title: hyphen[1].trim(), body: hyphen[2].trim().replace(/\n/g, ' ') });
+        continue;
+      }
+
+      // Strategy C: first line is short title (≤90 chars), rest is body
+      const lines = rest.split('\n').map((l: string) => l.trim()).filter(Boolean);
+      if (lines.length >= 2 && lines[0].length <= 90) {
+        points.push({ num, title: lines[0], body: lines.slice(1).join(' ') });
+        continue;
+      }
+
+      // Strategy D: one long block — split at first sentence end as title
+      if (lines.length >= 1 && lines[0].length > 60) {
+        const blob = lines.join(' ');
+        const dot  = blob.search(/\.\s+[A-Z]/);
+        if (dot > 10 && dot < 120) {
+          points.push({ num, title: blob.substring(0, dot + 1).trim(), body: blob.substring(dot + 1).trim() });
+          continue;
+        }
+      }
+
+      // Fallback: no title
+      if (rest) points.push({ num, title: '', body: rest.replace(/\n/g, ' ') });
     }
 
     if (points.length >= 2) {
-      // Badge + border cycle through distinct colors; titles are always dark orange
       const palette = [
-        { badge: '#00d4aa', tint: 'rgba(0,212,170,0.08)'   },
-        { badge: '#a78bfa', tint: 'rgba(167,139,250,0.08)' },
-        { badge: '#40c4ff', tint: 'rgba(64,196,255,0.08)'  },
-        { badge: '#00e676', tint: 'rgba(0,230,118,0.08)'   },
-        { badge: '#ff6b8a', tint: 'rgba(255,107,138,0.08)' },
+        { badge: '#00d4aa', tint: 'rgba(0,212,170,0.10)'   },
+        { badge: '#a78bfa', tint: 'rgba(167,139,250,0.10)' },
+        { badge: '#40c4ff', tint: 'rgba(64,196,255,0.10)'  },
+        { badge: '#00e676', tint: 'rgba(0,230,118,0.10)'   },
+        { badge: '#ff6b8a', tint: 'rgba(255,107,138,0.10)' },
       ];
-      const TITLE_COLOR = '#e65c00'; // dark orange for all subheadings
+      const TITLE_COLOR = '#e65c00';
 
       return points.map((p, i) => {
         const { badge, tint } = palette[i % palette.length];
-        return `
-<div style="
-  border:1px solid rgba(255,255,255,0.08);
-  border-left:4px solid ${badge};
-  border-radius:12px;
-  overflow:hidden;
-  margin-bottom:10px;
-  background:var(--surface,#0e1a2b);
-">
-  <div style="
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:10px 16px;
-    background:${tint};
-    border-bottom:1px solid rgba(255,255,255,0.08);
-    width:100%;
-    box-sizing:border-box;
-  ">
-    <span style="
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      width:26px;height:26px;min-width:26px;
-      border-radius:50%;
-      background:${badge};
-      color:#0a0e27;
-      font-size:0.75rem;
-      font-weight:800;
-      flex-shrink:0;
-    ">${p.num}</span>
-    <span style="
-      flex:1;
-      font-size:0.91rem;
-      font-weight:700;
-      color:${TITLE_COLOR};
-      letter-spacing:0.01em;
-      line-height:1.3;
-    ">${p.title}</span>
-  </div>
-  <p style="
-    font-size:0.84rem;
-    color:var(--text-secondary,#94a3b8);
-    line-height:1.7;
-    margin:0;
-    padding:11px 16px;
-  ">${p.body}</p>
-</div>`.trim();
+        const headerHtml = p.title ? `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:${tint};border-bottom:1px solid rgba(255,255,255,0.08);box-sizing:border-box;"><span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;min-width:26px;border-radius:50%;background:${badge};color:#0a0e27;font-size:0.75rem;font-weight:800;flex-shrink:0;">${p.num}</span><span style="flex:1;font-size:0.91rem;font-weight:700;color:${TITLE_COLOR};letter-spacing:0.01em;line-height:1.3;">${p.title}</span></div>` : '';
+        return `<div style="border:1px solid rgba(255,255,255,0.08);border-left:4px solid ${badge};border-radius:12px;overflow:hidden;margin-bottom:10px;background:var(--surface,#0e1a2b);">${headerHtml}<p style="font-size:0.84rem;color:var(--text-secondary,#94a3b8);line-height:1.7;margin:0;padding:11px 16px;">${p.body}</p></div>`;
       }).join('\n');
     }
 
