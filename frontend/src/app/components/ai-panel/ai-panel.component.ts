@@ -378,18 +378,17 @@ export class AIPanelComponent implements OnChanges {
       .replace(/ {2,}/g, ' ')
       .trim();
 
-    // 2. Insert sentinel before each "N. Title —" where N follows start/newline/period
-    //    Avoids false splits on "42.3" or "40 percent" mid-sentence.
-    const sentinel = '\u0000POINT\u0000';
-    const marked = clean.replace(
-      /(^|[.\n])\s*([1-9])\.\s+([A-Z][^.!?\n]{2,80}?)\s*[-\u2014\u2013]+/g,
-      (_m: string, _pre: string, num: string, title: string) => `${sentinel}${num}. ${title} \u2014 `
-    );
-    const segments = marked.split(sentinel).filter((s: string) => /^\d+\.\s+/.test(s.trim()));
+    // 2. Split on \n\n — the API normalizeInsight() guarantees double-newlines between points.
+    //    Fallback sentinel approach handles any edge cases.
+    const segments = clean
+      .split(/\n\n+/)
+      .map((s: string) => s.trim())
+      .filter((s: string) => /^\d+\.\s+/.test(s));
 
     const points: Array<{num: string; title: string; body: string}> = [];
     for (const seg of segments) {
-      const m = seg.trim().match(/^(\d+)\.\s+(.+?)\s*[-\u2014\u2013]+\s*([\s\S]+)$/);
+      // Match "N. Title — body" where separator is any dash/em-dash variant
+      const m = seg.match(/^(\d+)\.\s+([^\n]+?)\s*[-\u2014\u2013]+\s*([\s\S]+)$/);
       if (m) {
         points.push({
           num:   m[1],

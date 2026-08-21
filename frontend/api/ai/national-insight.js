@@ -20,6 +20,20 @@ function stripThinkTags(text) {
   return text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*/gi, '').trim();
 }
 
+// Normalize AI output into clean "N. Title — body\n\n" segments regardless of
+// how the model chose to wrap lines or separate points.
+function normalizeInsight(text) {
+  // Strip control characters (e.g. \x15 NAK used by qwen between points)
+  let t = text.replace(/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/g, ' ').replace(/ {2,}/g, ' ').trim();
+  // Find every "N. " at a sentence boundary and insert double-newline before it
+  // Anchored to: start of string, after period+space, or after newline
+  t = t.replace(/(^|[.\n]\s*)([1-9])\.\s+/g, (m, pre, num) => {
+    const isStart = pre.trim() === '' && num === '1';
+    return isStart ? `${num}. ` : `\n\n${num}. `;
+  });
+  return t.trim();
+}
+
 function loadPopulationData() {
   const candidates = [
     path.join(__dirname, '../population.json'),
@@ -144,7 +158,7 @@ Write all 5 insight points now:
   try {
     const raw     = await callGroq(prompt, 6000);
     const cleaned = stripThinkTags(raw).replace(/\*\*/g, '').replace(/\*/g, '').trim();
-    const insight = cleaned.startsWith('1.') ? cleaned : `1.${cleaned}`;
+    const insight = normalizeInsight(cleaned.startsWith('1.') ? cleaned : `1.${cleaned}`);
     res.status(200).json({ year, insight, ai_powered: true });
   } catch (err) {
     const fallback = `Kenya total population across 47 counties in ${year}: ${totalPop.toLocaleString()}. Average dependency ratio: ${avgDep.toFixed(1)}. Most populous: ${maxC.county}. Least populous: ${minC.county}.`;

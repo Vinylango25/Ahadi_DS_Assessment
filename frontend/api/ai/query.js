@@ -28,6 +28,15 @@ function stripThinkTags(text) {
   return text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*/gi, '').trim();
 }
 
+function normalizeInsight(text) {
+  let t = text.replace(/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/g, ' ').replace(/ {2,}/g, ' ').trim();
+  t = t.replace(/(^|[.\n]\s*)([1-9])\.\s+/g, (m, pre, num) => {
+    const isStart = pre.trim() === '' && num === '1';
+    return isStart ? `${num}. ` : `\n\n${num}. `;
+  });
+  return t.trim();
+}
+
 function extractJSON(text) {
   const clean = stripThinkTags(text).replace(/```json|```/g, '').trim();
   const start = clean.indexOf('{');
@@ -308,9 +317,9 @@ Write all 5 insight points now:
 1.`;
 
     const rawAnswer = await callGroqAnswer(answerPrompt);
-    // The prompt ends with "1." so the model continues from there — prepend it back
+    // Normalize: strip think tags, prepend "1." if needed, then insert \n\n between points
     const answerText = stripThinkTags(rawAnswer).replace(/\*\*/g, '').trim();
-    const answer = answerText.startsWith('1.') ? answerText : `1.${answerText}`;
+    const answer = normalizeInsight(answerText.startsWith('1.') ? answerText : `1.${answerText}`);
 
     res.status(200).json({ question, sql: `/* ${plan.intent} */`, results, answer, error: null });
   } catch (err) {
