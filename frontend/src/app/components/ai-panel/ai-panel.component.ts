@@ -414,22 +414,25 @@ export class AIPanelComponent implements OnChanges {
     gap:10px;
     padding:10px 16px;
     background:${tint};
-    border-bottom:1px solid rgba(255,255,255,0.06);
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    width:100%;
+    box-sizing:border-box;
   ">
     <span style="
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      width:24px;height:24px;min-width:24px;
+      width:26px;height:26px;min-width:26px;
       border-radius:50%;
       background:${badge};
       color:#0a0e27;
-      font-size:0.74rem;
+      font-size:0.75rem;
       font-weight:800;
       flex-shrink:0;
     ">${p.num}</span>
     <span style="
-      font-size:0.92rem;
+      flex:1;
+      font-size:0.91rem;
       font-weight:700;
       color:${TITLE_COLOR};
       letter-spacing:0.01em;
@@ -441,7 +444,7 @@ export class AIPanelComponent implements OnChanges {
     color:var(--text-secondary,#94a3b8);
     line-height:1.7;
     margin:0;
-    padding:12px 16px;
+    padding:11px 16px;
   ">${p.body}</p>
 </div>`.trim();
       }).join('\n');
