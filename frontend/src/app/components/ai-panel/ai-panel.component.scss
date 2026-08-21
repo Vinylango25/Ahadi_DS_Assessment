@@ -296,20 +296,65 @@
 .query-result { margin-top: 4px; }
 
 .answer-card {
-  display: flex;
-  gap: 10px;
   background: linear-gradient(135deg, rgba(0,212,170,0.06) 0%, rgba(124,77,255,0.04) 100%);
   border: 1px solid rgba(0, 212, 170, 0.15);
   border-radius: 12px;
-  padding: 14px;
+  overflow: hidden;
   margin-bottom: 14px;
+}
+
+.answer-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(0,212,170,0.08);
+  border-bottom: 1px solid rgba(0,212,170,0.12);
 }
 
 .answer-icon {
   color: var(--primary);
   font-size: 1.1rem;
   flex-shrink: 0;
-  margin-top: 1px;
+}
+
+.answer-card-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.answer-card-meta {
+  margin-left: auto;
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  font-style: italic;
+}
+
+.answer-insight-body {
+  padding: 12px 14px;
+
+  // Plain paragraph fallback
+  p {
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    line-height: 1.65;
+    margin: 0 0 8px;
+    &:last-child { margin: 0; }
+  }
+
+  // Numbered insight cards rendered inside the answer
+  .insight-point {
+    margin-bottom: 8px;
+    &:last-child { margin-bottom: 0; }
+  }
 }
 
 .answer-text {

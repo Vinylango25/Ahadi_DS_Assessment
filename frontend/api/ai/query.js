@@ -225,9 +225,24 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const ANSWER_SYS = `You are a Kenya population data analyst. Answer the question in 2-3 clear sentences using the data. Use commas for thousands. No markdown, no asterisks, no formatting symbols.`;
-    const ANSWER_USER = `Question: ${question}\nData: ${JSON.stringify(results.slice(0,15))}`;
-    const rawAnswer   = await callGroq(ANSWER_SYS, ANSWER_USER, 250);
+    const ANSWER_SYS = `You are a Kenya population data analyst. Analyse the query results and provide a structured insight with exactly 3 to 5 numbered points.
+
+Each point MUST follow this exact format:
+N. Point Title — Explanation of the finding in 1-2 sentences using specific numbers from the data.
+
+Rules:
+- Use plain text only. No markdown, no asterisks, no bold, no bullet symbols.
+- Use commas for thousands (e.g. 1,234,567).
+- Each point must have a short title (2-5 words) followed by a dash, then the explanation.
+- Reference actual values from the data in every point.
+- Be analytical: explain what the numbers mean, not just what they are.
+
+Example format:
+1. Population Leader — Nairobi dominates with 5,721,634 residents, nearly 3 times larger than second-placed Kiambu.
+2. Urban Concentration — The top 5 counties account for 38% of Kenya total population despite covering less than 15% of land area.
+3. Growth Trend — All top counties show consistent growth of 2 to 3 percent annually since 2021.`;
+    const ANSWER_USER = `Question: ${question}\nData: ${JSON.stringify(results.slice(0, 20))}\n\nProvide 3-5 numbered analytical insight points about this data.`;
+    const rawAnswer   = await callGroq(ANSWER_SYS, ANSWER_USER, 600);
     const answer      = stripThinkTags(rawAnswer).replace(/\*\*/g, '');
 
     res.status(200).json({ question, sql: `/* ${plan.intent} */`, results, answer, error: null });

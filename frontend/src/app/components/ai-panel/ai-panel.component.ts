@@ -54,11 +54,11 @@ interface AIInsightResponse {
           </div>
         </div>
         <div class="ai-tabs">
-          <button class="ai-tab" [class.active]="activeTab() === 'insight'" (click)="setTab('insight')">
-            <span class="material-symbols-rounded">lightbulb</span> Insights
-          </button>
           <button class="ai-tab" [class.active]="activeTab() === 'query'" (click)="setTab('query')">
             <span class="material-symbols-rounded">manage_search</span> Ask Data
+          </button>
+          <button class="ai-tab" [class.active]="activeTab() === 'insight'" (click)="setTab('insight')">
+            <span class="material-symbols-rounded">lightbulb</span> Insights
           </button>
         </div>
       </div>
@@ -138,11 +138,17 @@ interface AIInsightResponse {
           @if (queryResult() && !loadingQuery()) {
             <div class="query-result animate-fade-in">
 
-              <!-- Answer prose -->
+              <!-- Answer + AI Insight -->
               @if (queryResult()!.answer) {
                 <div class="answer-card">
-                  <span class="material-symbols-rounded answer-icon">chat_bubble</span>
-                  <p class="answer-text">{{ queryResult()!.answer }}</p>
+                  <div class="answer-card-header">
+                    <span class="material-symbols-rounded answer-icon">auto_awesome</span>
+                    <span class="answer-card-title">AI Analysis</span>
+                    <span class="answer-card-meta">{{ queryResult()!.sql }}</span>
+                  </div>
+                  <div class="answer-insight-body"
+                       [innerHTML]="formatInsight(queryResult()!.answer!)">
+                  </div>
                 </div>
               }
 
@@ -232,7 +238,7 @@ export class AIPanelComponent implements OnChanges {
 
   private readonly http = inject(HttpClient);
 
-  readonly activeTab      = signal<'insight' | 'query'>('insight');
+  readonly activeTab      = signal<'insight' | 'query'>('query');
   readonly loadingInsight = signal(false);
   readonly loadingQuery   = signal(false);
   readonly insightText    = signal<string | null>(null);
