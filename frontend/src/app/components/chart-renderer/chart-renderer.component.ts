@@ -218,7 +218,6 @@ const PALETTE_VIVID  = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc
         <div echarts
              [options]="option"
              [autoResize]="true"
-             [theme]="isDark ? 'dark' : ''"
              class="cr-canvas"
              (chartInit)="onInit($event)">
         </div>
@@ -226,6 +225,7 @@ const PALETTE_VIVID  = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc
     </div>
   `,
   styles: [`
+    :host { display: block; width: 100%; }
     .cr-wrap  { width: 100%; background: transparent; }
     .cr-header {
       display: flex; align-items: center; gap: 8px;
@@ -234,14 +234,18 @@ const PALETTE_VIVID  = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc
     .cr-kind-badge {
       font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.06em; padding: 2px 8px; border-radius: 20px;
-      background: rgba(0,212,170,0.15); color: #00d4aa;
+      background: rgba(0,212,170,0.15); color: #00d4aa; flex-shrink: 0;
     }
     .cr-title {
       font-size: 0.82rem; font-weight: 600;
       color: var(--text-secondary);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .cr-canvas { width: 100%; height: 340px; }
+    .cr-canvas {
+      width: 100%; height: 340px;
+      /* Ensure canvas text is readable in both modes */
+      color-scheme: dark light;
+    }
   `],
 })
 export class ChartRendererComponent implements OnChanges {
@@ -283,9 +287,10 @@ export class ChartRendererComponent implements OnChanges {
   // ── Master builder ───────────────────────────────────────
   private buildOption(): void {
     if (!this.config || !this.results.length) { this.option = {}; return; }
-    const d = this.isDark;
-    const text  = d ? 'rgba(232,234,246,0.8)' : 'rgba(0,0,0,0.65)';
-    const grid  = d ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+    // Always dark — consistent with the dashboard theme
+    const text  = 'rgba(232,234,246,0.9)';
+    const text2 = 'rgba(200,210,230,0.65)';
+    const grid  = 'rgba(255,255,255,0.08)';
     const bg    = 'transparent';
 
     const base: EChartsOption = {
@@ -293,9 +298,12 @@ export class ChartRendererComponent implements OnChanges {
       animation: true,
       animationDuration: 800,
       animationEasing: 'cubicOut',
-      tooltip: { backgroundColor: d ? 'rgba(21,25,55,0.97)' : '#fff',
-                 borderColor: 'rgba(0,212,170,0.3)', borderWidth: 1,
-                 textStyle: { color: d ? '#e8eaf6' : '#111', fontSize: 12 } },
+      tooltip: {
+        backgroundColor: 'rgba(21,25,55,0.97)',
+        borderColor: 'rgba(0,212,170,0.3)',
+        borderWidth: 1,
+        textStyle: { color: '#e8eaf6', fontSize: 12 },
+      },
     };
 
     const k = this.config.kind;
