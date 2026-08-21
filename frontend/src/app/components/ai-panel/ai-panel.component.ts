@@ -368,22 +368,30 @@ export class AIPanelComponent implements OnChanges {
   formatInsight(text: string): string {
     if (!text) return '';
 
+    // 1. Strip think tags, markdown bold, control chars (e.g. \x15 NAK from qwen)
     const clean = text
       .replace(/<think>[\s\S]*?<\/think>/gi, '')
       .replace(/<think>[\s\S]*/gi, '')
       .replace(/\*\*/g, '')
       .replace(/\*/g, '')
+      .replace(/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/g, ' ') // strip control chars except \n(\x0a)
+      .replace(/ {2,}/g, ' ')
       .trim();
 
-    const pointRegex = /(\d+)\.\s+([^-—\n]+?)\s*[-—–]+\s*([\s\S]*?)(?=\n\s*\d+\.\s+|$)/g;
+    // 2. Split on "N." at start of a segment (handles \n, double-spaces, control char runs)
+    const segments = clean.split(/(?=\d+\.\s+)/g).filter(s => /^\d+\.\s+/.test(s.trim()));
+
     const points: Array<{num: string; title: string; body: string}> = [];
-    let match;
-    while ((match = pointRegex.exec(clean)) !== null) {
-      points.push({
-        num:   match[1],
-        title: match[2].trim(),
-        body:  match[3].trim().replace(/\n/g, ' '),
-      });
+    for (const seg of segments) {
+      // Each segment: "N. Title — body text"
+      const m = seg.trim().match(/^(\d+)\.\s+(.+?)(?:\s*[-—–]+\s*)([\s\S]+)$/);
+      if (m) {
+        points.push({
+          num:   m[1],
+          title: m[2].trim(),
+          body:  m[3].trim().replace(/\n/g, ' '),
+        });
+      }
     }
 
     if (points.length >= 2) {
