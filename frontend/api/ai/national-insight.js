@@ -1,11 +1,24 @@
 // Vercel Serverless Function: GET /api/ai/national-insight?year=2025
-// Uses Google Gemini 2.0 Flash (free: 1500 req/day, 1M TPM)
+// Uses Groq (4-key rotation) — qwen/qwen3.6-27b for insights
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODELS  = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
+// 4-key rotation — each key has its own daily quota
+const GROQ_API_KEYS = [
+  process.env.GROQ_API_KEY   || '',
+  process.env.GROQ_API_KEY_2 || '',
+  process.env.GROQ_API_KEY_3 || '',
+  process.env.GROQ_API_KEY_4 || '',
+  process.env.GROQ_API_KEY_5 || '',
+].filter(Boolean);
+
+const GROQ_ANSWER_MODEL = 'qwen/qwen3.6-27b';
+
+function stripThinkTags(text) {
+  if (!text) return '';
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*/gi, '').trim();
+}
 
 function loadPopulationData() {
   const candidates = [
@@ -20,24 +33,28 @@ function loadPopulationData() {
   return null;
 }
 
-function callGeminiModel(model, prompt, maxTokens) {
+function callGroqModel(apiKey, model, prompt, maxTokens) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: maxTokens || 900 },
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+      max_tokens: maxTokens || 6000,
     });
     const req = https.request({
-      hostname: 'generativelanguage.googleapis.com',
-      path: `/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      hostname: 'api.groq.com', path: '/openai/v1/chat/completions', method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Length': Buffer.byteLength(body),
+      },
     }, (res) => {
       let d = ''; res.on('data', c => d += c);
       res.on('end', () => {
         try {
           const j = JSON.parse(d);
           if (j.error) return reject(new Error(j.error.message));
-          resolve(j.candidates?.[0]?.content?.parts?.[0]?.text ?? '');
+          resolve(j.choices[0].message.content);
         } catch (e) { reject(e); }
       });
     });
@@ -45,19 +62,25 @@ function callGeminiModel(model, prompt, maxTokens) {
   });
 }
 
-async function callGemini(prompt, maxTokens) {
+async function callGroq(prompt, maxTokens) {
+  if (!GROQ_API_KEYS.length) throw new Error('No Groq API keys configured.');
   let lastErr;
-  for (const model of GEMINI_MODELS) {
-    try { return await callGeminiModel(model, prompt, maxTokens); }
-    catch (err) {
+  for (const apiKey of GROQ_API_KEYS) {
+    try {
+      return await callGroqModel(apiKey, GROQ_ANSWER_MODEL, prompt, maxTokens);
+    } catch (err) {
       const msg = (err.message || '').toLowerCase();
-      if (msg.includes('quota') || msg.includes('limit') || msg.includes('429') || msg.includes('not found')) {
-        lastErr = err; continue;
-      }
+      const isQuota =
+        msg.includes('rate limit') || msg.includes('quota') ||
+        msg.includes('tpd') || msg.includes('tpm') ||
+        msg.includes('does not exist') || msg.includes('decommissioned') ||
+        msg.includes('deprecated') || msg.includes('no longer supported') ||
+        msg.includes('exceeded') || msg.includes('limit reached');
+      if (isQuota) { lastErr = err; continue; }
       throw err;
     }
   }
-  throw lastErr;
+  throw lastErr || new Error('All Groq keys exhausted.');
 }
 
 module.exports = async (req, res) => {
@@ -82,22 +105,22 @@ module.exports = async (req, res) => {
   const totalEld  = records.reduce((s, r) => s + (r.elderly_65plus    || 0), 0);
   const maxC      = records.reduce((a, b) => (a.total_population||0) > (b.total_population||0) ? a : b);
   const minC      = records.reduce((a, b) => (a.total_population||0) < (b.total_population||0) ? a : b);
-  const highDep   = [...records].sort((a,b) => (b.dependency_ratio||0)-(a.dependency_ratio||0)).slice(0,3).map(r => `${r.county} (${r.dependency_ratio?.toFixed(1)})`).join(', ');
+  const highDep   = [...records].sort((a,b) => (b.dependency_ratio||0)-(a.dependency_ratio||0))
+                    .slice(0,3).map(r => `${r.county} (${r.dependency_ratio?.toFixed(1)})`).join(', ');
 
-  const fallback = `Kenya total population across 47 counties in ${year}: ${totalPop.toLocaleString()}. Average dependency ratio: ${avgDep.toFixed(1)}. Most populous: ${maxC.county}. Least populous: ${minC.county}.`;
-
-  if (!GEMINI_API_KEY) {
+  if (!GROQ_API_KEYS.length) {
+    const fallback = `Kenya total population across 47 counties in ${year}: ${totalPop.toLocaleString()}. Average dependency ratio: ${avgDep.toFixed(1)}. Most populous: ${maxC.county}. Least populous: ${minC.county}.`;
     res.status(200).json({ year, insight: fallback, ai_powered: false });
     return;
   }
 
   const prompt = `You are a senior public health data analyst specialising in Kenya's demographic trends.
-Generate exactly 5 numbered, actionable national-level insights.
+You MUST write EXACTLY 5 numbered insight points. Do not stop before point 5.
 
 Format each point EXACTLY as:
 N. Point Title — Insight text (2-3 sentences, specific and actionable, no markdown, no asterisks).
 
-Cover:
+Cover these 5 angles:
 1. Population size and inter-county inequality — resource allocation implications
 2. Child health burden (under-5) — immunisation, nutrition, MCH investment needed
 3. Elderly and ageing — NCD burden, elder care gaps
@@ -113,13 +136,18 @@ Kenya National Population Data — ${year}
 - Average dependency ratio: ${avgDep.toFixed(1)}
 - Most populous county: ${maxC.county} (${(maxC.total_population||0).toLocaleString()})
 - Least populous county: ${minC.county} (${(minC.total_population||0).toLocaleString()})
-- Highest dependency counties: ${highDep}`;
+- Highest dependency counties: ${highDep}
+
+Write all 5 insight points now:
+1.`;
 
   try {
-    const raw     = await callGemini(prompt, 900);
-    const insight = raw.replace(/\*\*/g, '').replace(/\*/g, '').trim();
+    const raw     = await callGroq(prompt, 6000);
+    const cleaned = stripThinkTags(raw).replace(/\*\*/g, '').replace(/\*/g, '').trim();
+    const insight = cleaned.startsWith('1.') ? cleaned : `1.${cleaned}`;
     res.status(200).json({ year, insight, ai_powered: true });
   } catch (err) {
+    const fallback = `Kenya total population across 47 counties in ${year}: ${totalPop.toLocaleString()}. Average dependency ratio: ${avgDep.toFixed(1)}. Most populous: ${maxC.county}. Least populous: ${minC.county}.`;
     res.status(200).json({ year, insight: fallback, ai_powered: false, error: err.message });
   }
 };

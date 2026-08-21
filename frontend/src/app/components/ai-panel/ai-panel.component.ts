@@ -380,13 +380,13 @@ export class AIPanelComponent implements OnChanges {
     }
 
     if (points.length >= 3) {
-      const colors = ['#00d4aa','#7c4dff','#ffab40','#40c4ff','#00e676'];
+      const colors = ['#00d4aa','#7c4dff','#ffab40','#40c4ff','#ff6b6b'];
       return points.map((p, i) => {
         const color = colors[i % colors.length];
         return `<div class="insight-point" style="border-left-color:${color}">
           <div class="insight-point-header">
             <span class="insight-num" style="background:${color};color:#0e2332">${p.num}</span>
-            <span class="insight-title">${p.title}</span>
+            <span class="insight-title" style="color:${color}">${p.title}</span>
           </div>
           <p class="insight-body">${p.body}</p>
         </div>`;
