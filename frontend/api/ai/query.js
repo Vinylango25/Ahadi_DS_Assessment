@@ -1,19 +1,21 @@
 // Vercel Serverless Function: POST /api/ai/query
-// Comprehensive NL query over Kenya population data
+// Uses Google Gemini 2.0 Flash (free: 1500 req/day, 1M TPM) with fallback to 1.5 Flash
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
-const GROQ_MODEL = 'qwen/qwen3.6-27b';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+// Model chain — tried in order on quota/error
+const GEMINI_MODELS  = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
 
+// ── Helpers ────────────────────────────────────────────────────
 function stripThinkTags(text) {
   if (!text) return '';
   return text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*/gi, '').trim();
 }
 
 function extractJSON(text) {
-  const clean = stripThinkTags(text).replace(/\*\*/g, '');
+  const clean = stripThinkTags(text).replace(/```json|```/g, '').trim();
   const start = clean.indexOf('{');
   const end   = clean.lastIndexOf('}');
   if (start === -1 || end === -1) return null;
@@ -33,42 +35,72 @@ function loadPopulationData() {
   return null;
 }
 
-function callGroq(system, user, maxTokens) {
+// ── Gemini API call ────────────────────────────────────────────
+function callGeminiModel(model, prompt, maxTokens) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
-      model: GROQ_MODEL,
-      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-      temperature: 0.1,
-      max_tokens: maxTokens || 500,
-      reasoning_effort: 'none',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: maxTokens || 500,
+      },
     });
+    const apiPath = `/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
     const req = https.request({
-      hostname: 'api.groq.com', path: '/openai/v1/chat/completions', method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Length': Buffer.byteLength(body) },
+      hostname: 'generativelanguage.googleapis.com',
+      path: apiPath,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
     }, (res) => {
-      let d = ''; res.on('data', c => d += c);
+      let d = '';
+      res.on('data', c => d += c);
       res.on('end', () => {
-        try { const j = JSON.parse(d); if (j.error) return reject(new Error(j.error.message)); resolve(j.choices[0].message.content); }
-        catch (e) { reject(e); }
+        try {
+          const j = JSON.parse(d);
+          if (j.error) return reject(new Error(j.error.message || JSON.stringify(j.error)));
+          const text = j.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+          resolve(text);
+        } catch (e) { reject(e); }
       });
     });
-    req.on('error', reject); req.write(body); req.end();
+    req.on('error', reject);
+    req.write(body);
+    req.end();
   });
 }
 
-// ── Available fields description ──────────────────────────────
-const FIELDS_DESC = `
-Each record has: county (string), year (2021-2025), total_population, children_under_5,
-working_age, elderly_65plus, sex_ratio (males per 100 females), dependency_ratio,
-child_dependency_ratio, elderly_dependency_ratio, pct_children (%), pct_elderly (%),
-county_area_km2
-`;
+async function callGemini(prompt, maxTokens) {
+  let lastErr;
+  for (const model of GEMINI_MODELS) {
+    try {
+      return await callGeminiModel(model, prompt, maxTokens);
+    } catch (err) {
+      const msg = (err.message || '').toLowerCase();
+      // Only retry on quota / rate / model errors
+      if (msg.includes('quota') || msg.includes('limit') || msg.includes('429') ||
+          msg.includes('not found') || msg.includes('unavailable')) {
+        lastErr = err;
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
 
+// ── Field descriptions ─────────────────────────────────────────
+const FIELDS_DESC = `Each record: county (string), year (2021-2025), total_population,
+children_under_5, working_age, elderly_65plus, sex_ratio (males per 100 females),
+dependency_ratio, child_dependency_ratio, elderly_dependency_ratio,
+pct_children (%), pct_elderly (%), county_area_km2`;
+
+// ── Query plan prompt ──────────────────────────────────────────
 const QUERY_SYSTEM = `You are a data analyst for Kenya county population data (2021-2025).
 ${FIELDS_DESC}
-Return ONLY a raw JSON object — no markdown, no explanation, no <think> tags.
 
-JSON schema:
+Return ONLY a raw JSON object — no markdown, no explanation.
+
+Schema:
 {
   "filter_year": number | null,
   "filter_county": string | null,
@@ -82,33 +114,27 @@ JSON schema:
   "intent": string
 }
 
-CRITICAL RULES:
-- "bottom N" / "lowest N" / "least" → sort_dir "asc", limit N, filter_year 2025 (if no year given)
-- "top N" / "highest N" / "most" → sort_dir "desc", limit N, filter_year 2025 (if no year given)
+RULES:
+- "bottom N"/"lowest" → sort_dir "asc", limit N, filter_year 2025
+- "top N"/"highest"   → sort_dir "desc", limit N, filter_year 2025
 - "all counties" ranking → filter_year 2025, group_by_county true, limit 47
-- "where X exceeds/above/over Y" → filters: [{field: X, op: "gt", value: Y}]
-- "where X below/under Y" → filters: [{field: X, op: "lt", value: Y}]
-- "average/mean" → aggregate "avg" on the relevant field
+- "where X exceeds/above Y" → filters: [{field:X, op:"gt", value:Y}]
+- "where X below Y" → filters: [{field:X, op:"lt", value:Y}]
+- "average/mean" → aggregate "avg"
 - "total" national → aggregate "sum"
 - "how many counties" → aggregate "count"
-- "trend" / "over years" / "2021 to 2025" / "all years" → set filter_county, sort_by "year", sort_dir "asc", limit 5, filter_year null, group_by_county false
-- "compare X and Y" / "X vs Y" → filter_county "X, Y" (comma-separated), filter_year 2025, group_by_county false, limit 10, sort_by "year", sort_dir "asc"
-- "profile" for one county → filter_county name, filter_year 2025, group_by_county false, limit 1
-- "scatter" / "correlation" → filter_year 2025, group_by_county true, limit 47, sort_by "total_population"
-- Always set group_by_county true for ranking/listing questions to avoid duplicate counties
-- For year-specific queries use exact year; for "current"/"latest" use 2025
+- "trend"/"over years"/"all years" → filter_county name, sort_by "year", sort_dir "asc", limit 5, filter_year null, group_by_county false
+- "compare X and Y"/"X vs Y" → filter_county "X, Y", filter_year 2025, group_by_county false, limit 10
+- "profile" 1 county → filter_county name, filter_year 2025, limit 1, group_by_county false
+- "scatter"/"correlation" → filter_year 2025, group_by_county true, limit 47
 
 EXAMPLES:
-"bottom 5 counties by population" → {"filter_year":2025,"sort_by":"total_population","sort_dir":"asc","limit":5,"group_by_county":true,"filters":[],"intent":"Bottom 5 counties by population 2025"}
-"counties where sex ratio exceeds 105 in 2025" → {"filter_year":2025,"filters":[{"field":"sex_ratio","op":"gt","value":105}],"sort_by":"sex_ratio","sort_dir":"desc","limit":47,"group_by_county":true,"intent":"Counties with sex ratio above 105 in 2025"}
-"average dependency ratio across all counties 2025" → {"filter_year":2025,"aggregate":"avg","aggregate_field":"dependency_ratio","filters":[],"intent":"Average dependency ratio in 2025"}
-"population trend for Nairobi 2021-2025" → {"filter_county":"Nairobi","filter_year":null,"sort_by":"year","sort_dir":"asc","limit":5,"group_by_county":false,"filters":[],"intent":"Nairobi population trend 2021-2025"}
-"compare Nairobi and Mombasa" → {"filter_county":"Nairobi, Mombasa","filter_year":2025,"sort_by":"total_population","sort_dir":"desc","limit":10,"group_by_county":false,"filters":[],"intent":"Nairobi vs Mombasa population comparison 2025"}
-"all 47 counties total population 2025" → {"filter_year":2025,"sort_by":"total_population","sort_dir":"desc","limit":47,"group_by_county":true,"filters":[],"intent":"All 47 counties ranked by population 2025"}
-"Nairobi population profile 2025" → {"filter_county":"Nairobi","filter_year":2025,"sort_by":null,"sort_dir":"desc","limit":1,"group_by_county":false,"filters":[],"intent":"Nairobi full population profile 2025"}
-"scatter population vs dependency ratio" → {"filter_year":2025,"sort_by":"total_population","sort_dir":"desc","limit":47,"group_by_county":true,"filters":[],"intent":"Population vs dependency ratio scatter 2025"}`;
+"top 5 counties by population" → {"filter_year":2025,"sort_by":"total_population","sort_dir":"desc","limit":5,"group_by_county":true,"filters":[],"intent":"Top 5 counties by population 2025"}
+"population trend Nairobi 2021-2025" → {"filter_county":"Nairobi","filter_year":null,"sort_by":"year","sort_dir":"asc","limit":5,"group_by_county":false,"filters":[],"intent":"Nairobi population trend 2021-2025"}
+"compare Nairobi and Mombasa" → {"filter_county":"Nairobi, Mombasa","filter_year":2025,"sort_by":"total_population","sort_dir":"desc","limit":10,"group_by_county":false,"filters":[],"intent":"Nairobi vs Mombasa comparison 2025"}
+"average dependency ratio 2025" → {"filter_year":2025,"aggregate":"avg","aggregate_field":"dependency_ratio","filters":[],"intent":"Average dependency ratio 2025"}`;
 
-// ── All meaningful data fields (always included when relevant) ──
+// ── All data fields ─────────────────────────────────────────────
 const ALL_DATA_FIELDS = [
   'total_population','children_under_5','working_age','elderly_65plus',
   'sex_ratio','dependency_ratio','child_dependency_ratio','elderly_dependency_ratio',
@@ -116,21 +142,11 @@ const ALL_DATA_FIELDS = [
 ];
 
 function pickFields(plan, filtersArr) {
-  // Fields explicitly referenced in the plan
-  const explicit = [
-    plan.sort_by,
-    plan.aggregate_field,
-    ...filtersArr.map(f => f.field),
-  ].filter(Boolean);
-
+  const explicit = [plan.sort_by, plan.aggregate_field, ...filtersArr.map(f => f.field)].filter(Boolean);
   if (explicit.length > 0) {
-    // Always include the primary sort/filter field plus a few context fields
-    const extra = ['total_population','dependency_ratio','sex_ratio']
-      .filter(f => !explicit.includes(f));
+    const extra = ['total_population','dependency_ratio','sex_ratio'].filter(f => !explicit.includes(f));
     return [...new Set([...explicit, ...extra])];
   }
-
-  // No explicit fields — return all data fields (county profile / comparison queries)
   return ALL_DATA_FIELDS;
 }
 
@@ -142,30 +158,24 @@ function buildRow(r, fields) {
   return row;
 }
 
+// ── Execute query plan ──────────────────────────────────────────
 function executeQuery(records, plan) {
   let rows = [...records];
 
-  // Year filter — default 2025 for ranking/sorting questions
   const needsYearDefault = plan.sort_by && !plan.filter_county && !plan.filter_year;
   const yearToUse = plan.filter_year || (needsYearDefault ? 2025 : null);
   if (yearToUse) rows = rows.filter(r => r.year === yearToUse);
 
-  // County filter — support multiple counties via comma or "and"/"vs"
   if (plan.filter_county) {
-    const countyNames = plan.filter_county
-      .split(/,|\s+and\s+|\s+vs\.?\s+/i)
-      .map(c => c.trim().toLowerCase())
-      .filter(Boolean);
-    rows = rows.filter(r =>
-      countyNames.some(name => r.county?.toLowerCase().includes(name))
-    );
+    const names = plan.filter_county.split(/,|\s+and\s+|\s+vs\.?\s+/i)
+      .map(c => c.trim().toLowerCase()).filter(Boolean);
+    rows = rows.filter(r => names.some(n => r.county?.toLowerCase().includes(n)));
   }
 
-  // Field filters
   const filtersArr = Array.isArray(plan.filters) ? plan.filters : [];
-  if (plan.filter_field && plan.filter_op && plan.filter_value != null) {
+  if (plan.filter_field && plan.filter_op && plan.filter_value != null)
     filtersArr.push({ field: plan.filter_field, op: plan.filter_op, value: plan.filter_value });
-  }
+
   for (const f of filtersArr) {
     rows = rows.filter(r => {
       const v = r[f.field]; if (v == null) return false;
@@ -177,12 +187,9 @@ function executeQuery(records, plan) {
     });
   }
 
-  // Aggregates
   if (plan.aggregate) {
     if (plan.aggregate === 'count') {
-      const unique = plan.group_by_county
-        ? new Set(rows.map(r => r.county)).size
-        : rows.length;
+      const unique = plan.group_by_county ? new Set(rows.map(r => r.county)).size : rows.length;
       return [{ count: unique, year: yearToUse || 'all' }];
     }
     if (plan.aggregate_field) {
@@ -196,61 +203,45 @@ function executeQuery(records, plan) {
       }[plan.aggregate];
       if (plan.aggregate === 'max' || plan.aggregate === 'min') {
         const matchRow = rows.find(r => r[plan.aggregate_field] === result);
-        return [{
-          [plan.aggregate]: +result.toFixed(2),
-          field: plan.aggregate_field,
-          county: matchRow?.county,
-          year: matchRow?.year || yearToUse,
-        }];
+        return [{ [plan.aggregate]: +result.toFixed(2), field: plan.aggregate_field, county: matchRow?.county, year: matchRow?.year || yearToUse }];
       }
-      return [{
-        [plan.aggregate]: +result.toFixed(2),
-        field: plan.aggregate_field,
-        counties_included: vals.length,
-        year: yearToUse || 'all',
-      }];
+      return [{ [plan.aggregate]: +result.toFixed(2), field: plan.aggregate_field, counties_included: vals.length, year: yearToUse || 'all' }];
     }
   }
 
-  // Sort
   if (plan.sort_by) {
     const dir = plan.sort_dir === 'asc' ? 1 : -1;
     rows.sort((a,b) => ((a[plan.sort_by]||0) - (b[plan.sort_by]||0)) * dir);
   }
 
-  const limit = Math.min(plan.limit || 10, 47);
+  const limit  = Math.min(plan.limit || 10, 47);
   const fields = pickFields(plan, filtersArr);
 
-  // Deduplicate by county (ranking / all-county queries)
   if (plan.group_by_county !== false && !plan.filter_county) {
-    const seen = new Set();
-    const out = [];
+    const seen = new Set(), out = [];
     for (const r of rows) {
-      if (!seen.has(r.county)) {
-        seen.add(r.county);
-        out.push(buildRow(r, fields));
-      }
+      if (!seen.has(r.county)) { seen.add(r.county); out.push(buildRow(r, fields)); }
       if (out.length >= limit) break;
     }
     return out;
   }
 
-  // No dedup — return all rows (trend / county comparison / time series)
   return rows.slice(0, limit).map(r => buildRow(r, fields));
 }
 
+// ── Handler ─────────────────────────────────────────────────────
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
-  if (req.method !== 'POST') { res.status(405).json({ detail: 'Method not allowed' }); return; }
+  if (req.method !== 'POST')   { res.status(405).json({ detail: 'Method not allowed' }); return; }
 
   const question = (req.body?.question || '').trim();
   if (!question) { res.status(400).json({ detail: 'question is required' }); return; }
 
-  if (!GROQ_API_KEY) {
-    res.status(200).json({ question, sql: null, results: [], answer: 'AI query requires GROQ_API_KEY.', error: null });
+  if (!GEMINI_API_KEY) {
+    res.status(200).json({ question, sql: null, results: [], answer: 'AI query requires GEMINI_API_KEY.', error: null });
     return;
   }
 
@@ -258,8 +249,10 @@ module.exports = async (req, res) => {
   const records = Object.values(bundle?.county_summaries || {});
 
   try {
-    const planRaw = await callGroq(QUERY_SYSTEM, question, 500);
-    const plan    = extractJSON(planRaw);
+    // Step 1 — parse query into a plan
+    const planPrompt = `${QUERY_SYSTEM}\n\nQuestion: ${question}\n\nReturn only the JSON object:`;
+    const planRaw    = await callGemini(planPrompt, 400);
+    const plan       = extractJSON(planRaw);
 
     if (!plan) {
       res.status(200).json({ question, sql: null, results: [], answer: 'Could not understand that question. Please try rephrasing.', error: null });
@@ -273,25 +266,26 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const ANSWER_SYS = `You are a Kenya population data analyst. Analyse the query results and provide a structured insight with exactly 3 to 5 numbered points.
+    // Step 2 — generate structured AI insight
+    const answerPrompt = `You are a Kenya population data analyst. Analyse the query results and provide exactly 3 to 5 numbered insight points.
 
 Each point MUST follow this exact format:
-N. Point Title — Explanation of the finding in 1-2 sentences using specific numbers from the data.
+N. Point Title — Explanation in 1-2 sentences using specific numbers from the data.
 
 Rules:
-- Use plain text only. No markdown, no asterisks, no bold, no bullet symbols.
+- Plain text only. No markdown, no asterisks, no bold symbols.
 - Use commas for thousands (e.g. 1,234,567).
-- Each point must have a short title (2-5 words) followed by a dash, then the explanation.
-- Reference actual values from the data in every point.
-- Be analytical: explain what the numbers mean, not just what they are.
+- Each point: short title (2-5 words) + dash + explanation.
+- Reference actual values from the data.
+- Be analytical — explain what the numbers mean.
 
-Example format:
-1. Population Leader — Nairobi dominates with 5,721,634 residents, nearly 3 times larger than second-placed Kiambu.
-2. Urban Concentration — The top 5 counties account for 38% of Kenya total population despite covering less than 15% of land area.
-3. Growth Trend — All top counties show consistent growth of 2 to 3 percent annually since 2021.`;
-    const ANSWER_USER = `Question: ${question}\nData: ${JSON.stringify(results.slice(0, 20))}\n\nProvide 3-5 numbered analytical insight points about this data.`;
-    const rawAnswer   = await callGroq(ANSWER_SYS, ANSWER_USER, 600);
-    const answer      = stripThinkTags(rawAnswer).replace(/\*\*/g, '');
+Question: ${question}
+Data: ${JSON.stringify(results.slice(0, 20))}
+
+Provide 3-5 numbered insight points:`;
+
+    const rawAnswer = await callGemini(answerPrompt, 600);
+    const answer    = stripThinkTags(rawAnswer).replace(/\*\*/g, '').trim();
 
     res.status(200).json({ question, sql: `/* ${plan.intent} */`, results, answer, error: null });
   } catch (err) {
