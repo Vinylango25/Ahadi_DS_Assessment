@@ -1,6 +1,6 @@
 // ============================================================
 // Ahadi — AI Insights & Natural Language Query Panel
-// Uses Groq LLaMA 3.1 (same model as WC project)
+// Uses Groq qwen3.6-27b · Rich visualizations via ECharts
 // ============================================================
 import {
   Component,
@@ -9,6 +9,7 @@ import {
   SimpleChanges,
   inject,
   signal,
+  computed,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -18,6 +19,7 @@ import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CountySummary } from '../../models/population.model';
+import { ChartRendererComponent, classifyChart, ChartConfig } from '../chart-renderer/chart-renderer.component';
 
 interface NLQueryResult {
   question: string;
@@ -38,7 +40,7 @@ interface AIInsightResponse {
   selector: 'app-ai-panel',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ChartRendererComponent],
   template: `
     <div class="ai-panel">
 
@@ -48,7 +50,7 @@ interface AIInsightResponse {
           <span class="material-symbols-rounded ai-icon">auto_awesome</span>
           <div>
             <h3 class="ai-name">AI Insights</h3>
-            <p class="ai-sub">Powered by LLaMA 3.1 · Groq</p>
+            <p class="ai-sub">Powered by Qwen 3 · Groq</p>
           </div>
         </div>
         <div class="ai-tabs">
@@ -61,7 +63,7 @@ interface AIInsightResponse {
         </div>
       </div>
 
-      <!-- ── Insight tab ────────────────────────────────────── -->
+      <!-- ── Insight tab ─────────────────────────────────── -->
       @if (activeTab() === 'insight') {
         <div class="insight-body">
           @if (countyName) {
@@ -95,10 +97,11 @@ interface AIInsightResponse {
         </div>
       }
 
-      <!-- ── NL Query tab ───────────────────────────────────── -->
+      <!-- ── NL Query tab ───────────────────────────────── -->
       @if (activeTab() === 'query') {
         <div class="query-body">
-          <!-- Example questions -->
+
+          <!-- Example chips -->
           <div class="example-row">
             <span class="example-label">Try:</span>
             @for (q of exampleQuestions; track q) {
@@ -106,7 +109,7 @@ interface AIInsightResponse {
             }
           </div>
 
-          <!-- Input -->
+          <!-- Input row -->
           <div class="query-input-row">
             <input
               type="text"
@@ -123,11 +126,19 @@ interface AIInsightResponse {
             </button>
           </div>
 
-          <!-- Result -->
-          @if (queryResult()) {
+          <!-- Loading skeleton -->
+          @if (loadingQuery()) {
+            <div class="loading-pulse">
+              <span class="material-symbols-rounded spin">progress_activity</span>
+              Analysing data…
+            </div>
+          }
+
+          <!-- ── Results ──────────────────────────────── -->
+          @if (queryResult() && !loadingQuery()) {
             <div class="query-result animate-fade-in">
 
-              <!-- Answer -->
+              <!-- Answer prose -->
               @if (queryResult()!.answer) {
                 <div class="answer-card">
                   <span class="material-symbols-rounded answer-icon">chat_bubble</span>
@@ -135,41 +146,68 @@ interface AIInsightResponse {
                 </div>
               }
 
-              <!-- SQL -->
+              <!-- ── Visualisation ─────────────────── -->
+              @if (chartConfig() && queryResult()!.results && queryResult()!.results.length > 0) {
+                <div class="viz-section">
+                  <app-chart-renderer
+                    [config]="chartConfig()!"
+                    [results]="queryResult()!.results">
+                  </app-chart-renderer>
+                </div>
+              }
+
+              <!-- ── Data Table ────────────────────── -->
+              @if (queryResult()!.results && queryResult()!.results.length) {
+                <div class="results-table-wrap">
+                  <div class="table-header-row">
+                    <span class="material-symbols-rounded">table_chart</span>
+                    <span>
+                      Data Table ·
+                      {{ queryResult()!.results.length }} row{{ queryResult()!.results.length !== 1 ? 's' : '' }}
+                    </span>
+                    <span class="table-meta">{{ queryResult()!.sql }}</span>
+                  </div>
+                  <div class="table-scroll">
+                    <table class="results-table">
+                      <thead>
+                        <tr>
+                          <th class="rank-th">#</th>
+                          @for (col of tableHeaders(); track col) {
+                            <th>{{ formatHeader(col) }}</th>
+                          }
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (row of queryResult()!.results.slice(0, 20); track $index) {
+                          <tr [class.highlight-row]="$index === 0">
+                            <td class="rank-cell">{{ $index + 1 }}</td>
+                            @for (col of tableHeaders(); track col) {
+                              <td [class.county-cell]="col === 'county'"
+                                  [class.num-cell]="isNumericCol(col)">
+                                {{ formatCell(row[col]) }}
+                              </td>
+                            }
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                  @if (queryResult()!.results.length > 20) {
+                    <p class="table-note">
+                      Showing 20 of {{ queryResult()!.results.length }} rows
+                    </p>
+                  }
+                </div>
+              }
+
+              <!-- Query intent badge -->
               @if (queryResult()!.sql) {
                 <details class="sql-details">
                   <summary class="sql-summary">
-                    <span class="material-symbols-rounded">code</span> View SQL
+                    <span class="material-symbols-rounded">info</span> Query Intent
                   </summary>
                   <pre class="sql-code">{{ queryResult()!.sql }}</pre>
                 </details>
-              }
-
-              <!-- Table -->
-              @if (queryResult()!.results?.length) {
-                <div class="results-table-wrap">
-                  <table class="results-table">
-                    <thead>
-                      <tr>
-                        @for (col of tableHeaders(); track col) {
-                          <th>{{ col }}</th>
-                        }
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (row of queryResult()!.results.slice(0,10); track $index) {
-                        <tr>
-                          @for (col of tableHeaders(); track col) {
-                            <td>{{ formatCell(row[col]) }}</td>
-                          }
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                  @if (queryResult()!.results.length > 10) {
-                    <p class="table-note">Showing 10 of {{ queryResult()!.results.length }} results</p>
-                  }
-                </div>
               }
 
               <!-- Error -->
@@ -194,7 +232,7 @@ export class AIPanelComponent implements OnChanges {
 
   private readonly http = inject(HttpClient);
 
-  readonly activeTab     = signal<'insight' | 'query'>('insight');
+  readonly activeTab      = signal<'insight' | 'query'>('insight');
   readonly loadingInsight = signal(false);
   readonly loadingQuery   = signal(false);
   readonly insightText    = signal<string | null>(null);
@@ -204,11 +242,21 @@ export class AIPanelComponent implements OnChanges {
   userQuestion = '';
 
   readonly exampleQuestions = [
-    'Which county has the highest dependency ratio in 2025?',
-    'Top 5 most populous counties in 2024',
+    'Top 5 most populous counties in 2025',
+    'Population trend for Nairobi 2021-2025',
     'Counties where sex ratio exceeds 105',
-    'Average children under 5 across all counties in 2025',
+    'Compare Nairobi and Mombasa population profiles',
+    'Average dependency ratio 2025',
+    'Scatter: population vs dependency ratio all counties',
   ];
+
+  // ── Chart config derived from query results ──────────────
+  readonly chartConfig = computed((): ChartConfig | null => {
+    const r = this.queryResult();
+    if (!r?.results?.length) return null;
+    const intent = r.sql?.replace(/^\/\*\s*|\s*\*\//g, '').trim() ?? r.question ?? '';
+    return classifyChart(intent, r.results);
+  });
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['countyName'] || changes['year']) {
@@ -218,9 +266,9 @@ export class AIPanelComponent implements OnChanges {
   }
 
   setTab(tab: 'insight' | 'query'): void { this.activeTab.set(tab); }
-
   setQuestion(q: string): void { this.userQuestion = q; }
 
+  // ── Load county insight ──────────────────────────────────
   loadCountyInsight(): void {
     if (!this.countyName) return;
     this.loadingInsight.set(true);
@@ -230,21 +278,17 @@ export class AIPanelComponent implements OnChanges {
     this.http.get<AIInsightResponse>(
       `${environment.apiUrl}/api/ai/county-insight`,
       { params: { county: this.countyName, year: this.year } }
-    )
-      .pipe(catchError(err => {
-        const msg = err?.error?.detail ?? 'AI insight unavailable. Ensure GROQ_API_KEY is configured.';
-        this.insightError.set(msg);
-        this.loadingInsight.set(false);
-        return of(null);
-      }))
-      .subscribe(res => {
-        if (res) {
-          this.insightText.set(res.insight);
-        }
-        this.loadingInsight.set(false);
-      });
+    ).pipe(catchError(err => {
+      this.insightError.set(err?.error?.detail ?? 'AI insight unavailable. Ensure GROQ_API_KEY is configured.');
+      this.loadingInsight.set(false);
+      return of(null);
+    })).subscribe(res => {
+      if (res) this.insightText.set(res.insight);
+      this.loadingInsight.set(false);
+    });
   }
 
+  // ── Load national insight ────────────────────────────────
   loadNationalInsight(): void {
     this.loadingInsight.set(true);
     this.insightError.set(null);
@@ -253,18 +297,17 @@ export class AIPanelComponent implements OnChanges {
     this.http.get<AIInsightResponse>(
       `${environment.apiUrl}/api/ai/national-insight`,
       { params: { year: this.year } }
-    )
-      .pipe(catchError(err => {
-        this.insightError.set(err?.error?.detail ?? 'AI insight unavailable.');
-        this.loadingInsight.set(false);
-        return of(null);
-      }))
-      .subscribe(res => {
-        if (res) this.insightText.set(res.insight);
-        this.loadingInsight.set(false);
-      });
+    ).pipe(catchError(err => {
+      this.insightError.set(err?.error?.detail ?? 'AI insight unavailable.');
+      this.loadingInsight.set(false);
+      return of(null);
+    })).subscribe(res => {
+      if (res) this.insightText.set(res.insight);
+      this.loadingInsight.set(false);
+    });
   }
 
+  // ── Submit NL query ──────────────────────────────────────
   submitQuery(): void {
     if (!this.userQuestion.trim()) return;
     this.loadingQuery.set(true);
@@ -273,47 +316,56 @@ export class AIPanelComponent implements OnChanges {
     this.http.post<NLQueryResult>(
       `${environment.apiUrl}/api/ai/query`,
       { question: this.userQuestion.trim() }
-    )
-      .pipe(catchError(err => {
-        return of({
-          question: this.userQuestion,
-          sql: null,
-          results: [],
-          answer: null,
-          error: err?.error?.detail ?? 'Query failed.',
-        } as NLQueryResult);
-      }))
-      .subscribe(res => {
-        this.queryResult.set(res);
-        this.loadingQuery.set(false);
-      });
+    ).pipe(catchError(err => of({
+      question: this.userQuestion,
+      sql: null,
+      results: [],
+      answer: null,
+      error: err?.error?.detail ?? 'Query failed.',
+    } as NLQueryResult))).subscribe(res => {
+      this.queryResult.set(res);
+      this.loadingQuery.set(false);
+    });
   }
 
+  // ── Table helpers ─────────────────────────────────────────
   tableHeaders(): string[] {
     const results = this.queryResult()?.results ?? [];
     if (!results.length) return [];
     return Object.keys(results[0]);
   }
 
+  isNumericCol(col: string): boolean {
+    const r = this.queryResult()?.results;
+    if (!r?.length) return false;
+    return typeof r[0][col] === 'number';
+  }
+
+  formatHeader(col: string): string {
+    return col.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
   formatCell(val: any): string {
     if (val === null || val === undefined) return '—';
     if (typeof val === 'number') {
-      return Math.abs(val) >= 1000 ? val.toLocaleString('en-US', { maximumFractionDigits: 1 }) : String(val.toFixed(2));
+      if (!isFinite(val)) return '—';
+      return Math.abs(val) >= 1000
+        ? val.toLocaleString('en-US', { maximumFractionDigits: 1 })
+        : val.toFixed(2);
     }
     return String(val);
   }
 
+  // ── Insight formatter (numbered cards) ───────────────────
   formatInsight(text: string): string {
     if (!text) return '';
 
-    // Strip any leftover <think> blocks
     let clean = text
       .replace(/<think>[\s\S]*?<\/think>/gi, '')
       .replace(/<think>[\s\S]*/gi, '')
-      .replace(/\*\*/g, '')   // strip ALL markdown bold stars
+      .replace(/\*\*/g, '')
       .trim();
 
-    // Parse: "1. Title - body"  or  "1. Title — body"
     const pointRegex = /(\d+)\.\s+([^-—\n]+?)\s*[-—–]+\s*([\s\S]*?)(?=\n\s*\d+\.\s+|$)/g;
     const points: Array<{num: string; title: string; body: string}> = [];
     let match;
@@ -335,7 +387,6 @@ export class AIPanelComponent implements OnChanges {
       }).join('');
     }
 
-    // Fallback: plain paragraphs
     return clean
       .split(/\n\n+/)
       .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)

@@ -6,7 +6,7 @@
   box-shadow: var(--shadow);
 }
 
-// ── Header ────────────────────────────────────────────────────
+// ── Header ─────────────────────────────────────────────────────
 .ai-header {
   display: flex;
   align-items: center;
@@ -78,7 +78,7 @@
   &:hover:not(.active) { color: var(--text-primary); }
 }
 
-// ── Insight tab ───────────────────────────────────────────────
+// ── Tab bodies ─────────────────────────────────────────────────
 .insight-body,
 .query-body {
   padding: 20px;
@@ -108,10 +108,10 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0,212,170,0.4);
   }
-
   &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 }
 
+// ── Insight card ───────────────────────────────────────────────
 .insight-card {
   background: var(--elevated);
   border: 1px solid rgba(0, 212, 170, 0.15);
@@ -140,7 +140,55 @@
   p { margin: 0 0 10px; &:last-child { margin: 0; } }
 }
 
-// ── Query tab ─────────────────────────────────────────────────
+// ── Numbered insight cards ─────────────────────────────────────
+.insight-point {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  &:last-child { margin-bottom: 0; }
+}
+
+.insight-point-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--border);
+}
+
+.insight-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #0e2332;
+}
+
+.insight-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+.insight-body {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0;
+  padding: 10px 14px;
+}
+
+// ── Query input ────────────────────────────────────────────────
 .example-row {
   display: flex;
   align-items: center;
@@ -167,7 +215,11 @@
   font-family: inherit;
   transition: all 0.2s ease;
 
-  &:hover { background: var(--primary-alpha); color: var(--primary); border-color: rgba(0,212,170,0.3); }
+  &:hover {
+    background: var(--primary-alpha);
+    color: var(--primary);
+    border-color: rgba(0,212,170,0.3);
+  }
 }
 
 .query-input-row {
@@ -219,7 +271,30 @@
   &:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 }
 
-// ── Query result ──────────────────────────────────────────────
+// ── Loading pulse ──────────────────────────────────────────────
+.loading-pulse {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  padding: 10px 0;
+
+  .material-symbols-rounded { font-size: 1.1rem; color: var(--primary); }
+}
+
+.spin {
+  animation: spinAnim 1s linear infinite;
+}
+
+@keyframes spinAnim {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+// ── Answer card ────────────────────────────────────────────────
+.query-result { margin-top: 4px; }
+
 .answer-card {
   display: flex;
   gap: 10px;
@@ -227,7 +302,7 @@
   border: 1px solid rgba(0, 212, 170, 0.15);
   border-radius: 12px;
   padding: 14px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .answer-icon {
@@ -244,6 +319,128 @@
   margin: 0;
 }
 
+// ── Visualisation section ──────────────────────────────────────
+.viz-section {
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px 8px;
+  margin-bottom: 14px;
+}
+
+// ── Data table ─────────────────────────────────────────────────
+.results-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.table-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--elevated);
+  border-bottom: 1px solid var(--border);
+
+  .material-symbols-rounded { font-size: 0.95rem; color: var(--primary); }
+}
+
+.table-meta {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--text-tertiary);
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  min-width: 300px;
+
+  th {
+    background: var(--elevated);
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  td {
+    padding: 7px 12px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--divider);
+    white-space: nowrap;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+}
+
+.rank-th {
+  width: 32px;
+  text-align: center !important;
+  color: var(--text-tertiary) !important;
+}
+
+.rank-cell {
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.74rem;
+  font-weight: 600;
+  width: 32px;
+}
+
+.county-cell {
+  font-weight: 600;
+  color: var(--primary) !important;
+}
+
+.num-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.highlight-row td {
+  background: rgba(0, 212, 170, 0.06) !important;
+}
+.highlight-row .rank-cell {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.table-note {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  margin: 0;
+  padding: 6px 14px;
+  background: var(--elevated);
+  border-top: 1px solid var(--divider);
+}
+
+// ── SQL details ────────────────────────────────────────────────
 .sql-details {
   margin-bottom: 12px;
   border: 1px solid var(--border);
@@ -278,45 +475,7 @@
   word-break: break-word;
 }
 
-.results-table-wrap {
-  overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  margin-bottom: 8px;
-}
-
-.results-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8rem;
-
-  th {
-    background: var(--elevated);
-    color: var(--text-secondary);
-    padding: 8px 12px;
-    text-align: left;
-    font-weight: 700;
-    white-space: nowrap;
-    border-bottom: 1px solid var(--border);
-  }
-
-  td {
-    padding: 7px 12px;
-    color: var(--text-primary);
-    border-bottom: 1px solid var(--divider);
-    white-space: nowrap;
-  }
-
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--surface-hover); }
-}
-
-.table-note {
-  font-size: 0.72rem;
-  color: var(--text-tertiary);
-  margin: 6px 0 0;
-}
-
+// ── Error ──────────────────────────────────────────────────────
 .ai-error {
   display: flex;
   align-items: flex-start;
@@ -332,51 +491,7 @@
   .material-symbols-rounded { font-size: 1rem; flex-shrink: 0; }
 }
 
-// ── Numbered insight cards ──────────────────────────────────
-.insight-point {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--primary);
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 10px;
-  &:last-child { margin-bottom: 0; }
-}
-.insight-point-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 14px;
-  background: rgba(255,255,255,0.04);
-  border-bottom: 1px solid var(--border);
-}
-.insight-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
-  border-radius: 50%;
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: #0e2332;
-}
-.insight-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 0.01em;
-}
-.insight-body {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  line-height: 1.65;
-  margin: 0;
-  padding: 10px 14px;
-}
-
-// ── Animations ────────────────────────────────────────────────
+// ── Animations ─────────────────────────────────────────────────
 .animate-fade-in {
   animation: fadeIn 0.4s ease;
 }
@@ -384,53 +499,4 @@
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-
-
-// ── Numbered insight cards ──────────────────────────────────
-.insight-point {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--primary);
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 10px;
-
-  &:last-child { margin-bottom: 0; }
-}
-
-.insight-point-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 14px;
-  background: rgba(255,255,255,0.04);
-  border-bottom: 1px solid var(--border);
-}
-
-.insight-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
-  border-radius: 50%;
-  font-size: 0.72rem;
-  font-weight: 800;
-}
-
-.insight-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 0.01em;
-}
-
-.insight-body {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  line-height: 1.65;
-  margin: 0;
-  padding: 10px 14px;
 }
