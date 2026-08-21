@@ -263,8 +263,10 @@ module.exports = async (req, res) => {
 
   try {
     // Step 1 — parse query into a plan
-    const planPrompt = `${QUERY_SYSTEM}\n\nQuestion: ${question}\n\nReturn only the JSON object:`;
-    const planRaw    = await callGroq(planPrompt, 400);
+    // Use /no_think to suppress <think> reasoning blocks (qwen3 supports this suffix)
+    // and raise max_tokens so the JSON isn't truncated if the model still reasons
+    const planPrompt = `${QUERY_SYSTEM}\n\nQuestion: ${question}\n\nReturn only the JSON object: /no_think`;
+    const planRaw    = await callGroq(planPrompt, 1200);
     const plan       = extractJSON(planRaw);
 
     if (!plan) {
@@ -297,7 +299,7 @@ Data: ${JSON.stringify(results.slice(0, 20))}
 
 Provide 3-5 numbered insight points:`;
 
-    const rawAnswer = await callGroq(answerPrompt, 600);
+    const rawAnswer = await callGroq(answerPrompt, 800);
     const answer    = stripThinkTags(rawAnswer).replace(/\*\*/g, '').trim();
 
     res.status(200).json({ question, sql: `/* ${plan.intent} */`, results, answer, error: null });
