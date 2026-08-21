@@ -362,45 +362,93 @@ export class AIPanelComponent implements OnChanges {
     return String(val);
   }
 
-  // ── Insight formatter (numbered cards) ───────────────────
+  // ── Insight formatter (numbered cards — fully inline styled) ─
+  // Must use inline styles because Angular's Emulated encapsulation
+  // scopes SCSS classes and they won't match innerHTML-injected HTML.
   formatInsight(text: string): string {
     if (!text) return '';
 
-    let clean = text
+    const clean = text
       .replace(/<think>[\s\S]*?<\/think>/gi, '')
       .replace(/<think>[\s\S]*/gi, '')
       .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
       .trim();
 
     const pointRegex = /(\d+)\.\s+([^-—\n]+?)\s*[-—–]+\s*([\s\S]*?)(?=\n\s*\d+\.\s+|$)/g;
     const points: Array<{num: string; title: string; body: string}> = [];
     let match;
     while ((match = pointRegex.exec(clean)) !== null) {
-      points.push({ num: match[1], title: match[2].trim(), body: match[3].trim().replace(/\n/g, ' ') });
+      points.push({
+        num:   match[1],
+        title: match[2].trim(),
+        body:  match[3].trim().replace(/\n/g, ' '),
+      });
     }
 
-    if (points.length >= 3) {
-      const colors = ['#00d4aa','#7c4dff','#ffab40','#40c4ff','#ff6b6b'];
+    if (points.length >= 2) {
+      const palette = [
+        { text: '#00d4aa', tint: 'rgba(0,212,170,0.09)'   },
+        { text: '#a78bfa', tint: 'rgba(167,139,250,0.09)' },
+        { text: '#ffab40', tint: 'rgba(255,171,64,0.09)'  },
+        { text: '#40c4ff', tint: 'rgba(64,196,255,0.09)'  },
+        { text: '#ff6b8a', tint: 'rgba(255,107,138,0.09)' },
+      ];
+
       return points.map((p, i) => {
-        const color = colors[i % colors.length];
-        // Convert hex to rgb for rgba() tint
-        const r = parseInt(color.slice(1,3),16);
-        const g = parseInt(color.slice(3,5),16);
-        const b = parseInt(color.slice(5,7),16);
-        const tint = `rgba(${r},${g},${b},0.08)`;
-        return `<div class="insight-point" style="border-left-color:${color}">
-          <div class="insight-point-header" style="background:${tint}">
-            <span class="insight-num" style="background:${color};color:#0a0e27">${p.num}</span>
-            <span class="insight-title" style="color:${color}">${p.title}</span>
-          </div>
-          <p class="insight-body">${p.body}</p>
-        </div>`;
-      }).join('');
+        const { text: color, tint } = palette[i % palette.length];
+        return `
+<div style="
+  border:1px solid rgba(255,255,255,0.08);
+  border-left:4px solid ${color};
+  border-radius:12px;
+  overflow:hidden;
+  margin-bottom:10px;
+  background:var(--surface,#0e1a2b);
+">
+  <div style="
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 16px;
+    background:${tint};
+    border-bottom:1px solid rgba(255,255,255,0.06);
+  ">
+    <span style="
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:24px;height:24px;min-width:24px;
+      border-radius:50%;
+      background:${color};
+      color:#0a0e27;
+      font-size:0.74rem;
+      font-weight:800;
+      flex-shrink:0;
+    ">${p.num}</span>
+    <span style="
+      font-size:0.92rem;
+      font-weight:700;
+      color:${color};
+      letter-spacing:0.01em;
+      line-height:1.3;
+    ">${p.title}</span>
+  </div>
+  <p style="
+    font-size:0.84rem;
+    color:var(--text-secondary,#94a3b8);
+    line-height:1.7;
+    margin:0;
+    padding:12px 16px;
+  ">${p.body}</p>
+</div>`.trim();
+      }).join('\n');
     }
 
+    // Fallback: plain paragraphs
     return clean
       .split(/\n\n+/)
-      .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+      .map(p => `<p style="font-size:0.88rem;line-height:1.65;margin:0 0 8px;color:var(--text-secondary,#94a3b8)">${p.replace(/\n/g, '<br>')}</p>`)
       .join('');
   }
 }
