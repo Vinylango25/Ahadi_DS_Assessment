@@ -7,7 +7,7 @@ const path  = require('path');
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GROQ_API_KEY   = process.env.GROQ_API_KEY   || '';
 // Use Groq with multiple model fallbacks — each has its own daily token limit
-const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it', 'llama3-8b-8192'];
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'gemma2-9b-it', 'llama-3.1-8b-instant'];
 
 // ── Helpers ────────────────────────────────────────────────────
 function stripThinkTags(text) {
