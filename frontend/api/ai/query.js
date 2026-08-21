@@ -5,7 +5,8 @@ const fs    = require('fs');
 const path  = require('path');
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
-const GROQ_MODEL   = 'qwen/qwen3.6-27b';
+const GROQ_MODEL_PLAN   = 'llama-3.1-8b-instant';   // 14,400 RPM — used for JSON plan parsing
+const GROQ_MODEL_ANSWER = 'llama-3.3-70b-versatile'; // 60 RPM  — used for insight generation
 
 function stripThinkTags(text) {
   if (!text) return '';
@@ -33,14 +34,13 @@ function loadPopulationData() {
   return null;
 }
 
-function callGroq(system, user, maxTokens) {
+function callGroq(system, user, maxTokens, model) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
-      model: GROQ_MODEL,
+      model: model || GROQ_MODEL_PLAN,
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
       temperature: 0.1,
       max_tokens: maxTokens || 500,
-      reasoning_effort: 'none',
     });
     const req = https.request({
       hostname: 'api.groq.com', path: '/openai/v1/chat/completions', method: 'POST',
@@ -258,7 +258,7 @@ module.exports = async (req, res) => {
   const records = Object.values(bundle?.county_summaries || {});
 
   try {
-    const planRaw = await callGroq(QUERY_SYSTEM, question, 500);
+    const planRaw = await callGroq(QUERY_SYSTEM, question, 500, GROQ_MODEL_PLAN);
     const plan    = extractJSON(planRaw);
 
     if (!plan) {
@@ -290,7 +290,7 @@ Example format:
 2. Urban Concentration — The top 5 counties account for 38% of Kenya total population despite covering less than 15% of land area.
 3. Growth Trend — All top counties show consistent growth of 2 to 3 percent annually since 2021.`;
     const ANSWER_USER = `Question: ${question}\nData: ${JSON.stringify(results.slice(0, 20))}\n\nProvide 3-5 numbered analytical insight points about this data.`;
-    const rawAnswer   = await callGroq(ANSWER_SYS, ANSWER_USER, 600);
+    const rawAnswer   = await callGroq(ANSWER_SYS, ANSWER_USER, 600, GROQ_MODEL_ANSWER);
     const answer      = stripThinkTags(rawAnswer).replace(/\*\*/g, '');
 
     res.status(200).json({ question, sql: `/* ${plan.intent} */`, results, answer, error: null });
