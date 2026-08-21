@@ -21,11 +21,14 @@ import { environment } from '../../../environments/environment';
 import { CountySummary } from '../../models/population.model';
 import { ChartRendererComponent, classifyChart, ChartConfig } from '../chart-renderer/chart-renderer.component';
 
+interface InsightPoint { title: string; body: string; }
+
 interface NLQueryResult {
   question: string;
   sql:     string | null;
   results: Record<string, any>[];
   answer:  string | null;
+  points:  InsightPoint[];
   error:   string | null;
 }
 
@@ -33,6 +36,7 @@ interface AIInsightResponse {
   county?:     string;
   year:        number;
   insight:     string;
+  points:      InsightPoint[];
   ai_powered:  boolean;
 }
 
@@ -327,6 +331,7 @@ export class AIPanelComponent implements OnChanges {
       sql: null,
       results: [],
       answer: null,
+      points: [] as InsightPoint[],
       error: err?.error?.detail ?? 'Query failed.',
     } as NLQueryResult))).subscribe(res => {
       this.queryResult.set(res);
