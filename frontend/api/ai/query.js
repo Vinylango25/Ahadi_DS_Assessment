@@ -104,8 +104,9 @@ async function callGroq(model, prompt, maxTokens) {
 
 // Plan step: compound-mini → no reasoning tokens, clean JSON, low token cost
 const callGroqPlan   = (prompt) => callGroq(GROQ_PLAN_MODEL,   prompt, 400);
-// Answer step: qwen3.6-27b → reasoning model needs high max_tokens to finish thinking
-const callGroqAnswer = (prompt) => callGroq(GROQ_ANSWER_MODEL, prompt, 3000);
+// Answer step: qwen3.6-27b is a reasoning model — it spends ~3-4K tokens thinking before
+// producing output. max_tokens=6000 ensures the think block + 5 full insight points fit.
+const callGroqAnswer = (prompt) => callGroq(GROQ_ANSWER_MODEL, prompt, 6000);
 
 // ── Field descriptions ─────────────────────────────────────────
 const FIELDS_DESC = `Each record: county (string), year (2021-2025), total_population,
