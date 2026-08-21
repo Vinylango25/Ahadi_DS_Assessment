@@ -28,13 +28,49 @@ function stripThinkTags(text) {
   return text.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*/gi, '').trim();
 }
 
-function normalizeInsight(text) {
-  let t = text.replace(/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/g, ' ').replace(/ {2,}/g, ' ').trim();
-  t = t.replace(/(^|[.\n]\s*)([1-9])\.\s+/g, (m, pre, num) => {
-    const isStart = pre.trim() === '' && num === '1';
-    return isStart ? `${num}. ` : `\n\n${num}. `;
-  });
-  return t.trim();
+function parsePoints(text) {
+  const points = [];
+  const clean = (text || '')
+    .replace(/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/g, ' ')
+    .replace(/\*\*/g, '').replace(/\*/g, '')
+    .replace(/ {2,}/g, ' ').trim();
+
+  // Split before each line starting with a digit (handles "1.", "1 ", "1Title" all equally)
+  const segments = clean
+    .split(/\n(?=\d+[\.\):\s]?\s*[A-Z\d])/)
+    .map(s => s.trim())
+    .filter(s => /^\d+/.test(s));
+
+  for (const seg of segments) {
+    const numMatch = seg.match(/^(\d+)[\.\):\s]*/);
+    if (!numMatch) continue;
+    const rest = seg.slice(numMatch[0].length).trim();
+    if (!rest) continue;
+
+    // A: em/en-dash  →  "Title — body"
+    const emDash = rest.match(/^([^\n]{3,100}?)\s*[\u2014\u2013]\s*([\s\S]+)$/);
+    if (emDash) { points.push({ title: emDash[1].trim(), body: emDash[2].trim().replace(/\n/g, ' ') }); continue; }
+
+    // B: space-hyphen-space  →  "Title - body"
+    const hyphen = rest.match(/^([^\n]{3,100}?)\s+-\s+([\s\S]+)$/);
+    if (hyphen) { points.push({ title: hyphen[1].trim(), body: hyphen[2].trim().replace(/\n/g, ' ') }); continue; }
+
+    // C: first line short (≤90 chars) = title, rest = body
+    const lines = rest.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length >= 2 && lines[0].length <= 90) {
+      points.push({ title: lines[0], body: lines.slice(1).join(' ') }); continue;
+    }
+
+    // D: one blob — split at first sentence boundary
+    const blob = lines.join(' ');
+    const dot  = blob.search(/\.\s+[A-Z]/);
+    if (dot > 10 && dot < 120) {
+      points.push({ title: blob.substring(0, dot + 1).trim(), body: blob.substring(dot + 1).trim() });
+    } else {
+      points.push({ title: '', body: blob });
+    }
+  }
+  return points;
 }
 
 function extractJSON(text) {
@@ -317,11 +353,11 @@ Write all 5 insight points now:
 1.`;
 
     const rawAnswer = await callGroqAnswer(answerPrompt);
-    // Normalize: strip think tags, prepend "1." if needed, then insert \n\n between points
     const answerText = stripThinkTags(rawAnswer).replace(/\*\*/g, '').trim();
-    const answer = normalizeInsight(answerText.startsWith('1.') ? answerText : `1.${answerText}`);
+    const answer = answerText.startsWith('1.') ? answerText : `1.${answerText}`;
+    const points = parsePoints(answer);
 
-    res.status(200).json({ question, sql: `/* ${plan.intent} */`, results, answer, error: null });
+    res.status(200).json({ question, sql: `/* ${plan.intent} */`, results, answer, points, error: null });
   } catch (err) {
     res.status(200).json({ question, sql: null, results: [], answer: null, error: err.message });
   }
