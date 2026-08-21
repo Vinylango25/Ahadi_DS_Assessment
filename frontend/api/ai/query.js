@@ -16,8 +16,11 @@ const GROQ_API_KEYS = [
   process.env.GROQ_API_KEY_5 || '',
 ].filter(Boolean);
 
-// Primary model; extend the list if additional free models become available
-const GROQ_MODELS = ['qwen/qwen3.6-27b'];
+// groq/compound-mini: non-reasoning model — fast, clean JSON, no <think> blocks
+// Used for the structured plan step only.
+// qwen/qwen3.6-27b: reasoning model — used for the prose answer step.
+const GROQ_PLAN_MODEL   = 'groq/compound-mini';
+const GROQ_ANSWER_MODEL = 'qwen/qwen3.6-27b';
 
 // ── Helpers ────────────────────────────────────────────────────
 function stripThinkTags(text) {
@@ -76,30 +79,33 @@ function callGroqModel(apiKey, model, prompt, maxTokens) {
   });
 }
 
-// Rotate: for every (key × model) combination until one succeeds.
-// Rotates to the next key on any rate-limit / quota / decommission error.
-async function callGroq(prompt, maxTokens) {
+// Rotate across all keys for a given model.
+// Moves to next key on any rate-limit / quota / decommission error.
+async function callGroq(model, prompt, maxTokens) {
   if (!GROQ_API_KEYS.length) throw new Error('No Groq API keys configured.');
   let lastErr;
   for (const apiKey of GROQ_API_KEYS) {
-    for (const model of GROQ_MODELS) {
-      try {
-        return await callGroqModel(apiKey, model, prompt, maxTokens);
-      } catch (err) {
-        const msg = (err.message || '').toLowerCase();
-        const isQuota =
-          msg.includes('rate limit') || msg.includes('quota') ||
-          msg.includes('tpd') || msg.includes('tpm') ||
-          msg.includes('does not exist') || msg.includes('decommissioned') ||
-          msg.includes('deprecated') || msg.includes('no longer supported') ||
-          msg.includes('exceeded') || msg.includes('limit reached');
-        if (isQuota) { lastErr = err; continue; }
-        throw err; // non-quota error — surface immediately
-      }
+    try {
+      return await callGroqModel(apiKey, model, prompt, maxTokens);
+    } catch (err) {
+      const msg = (err.message || '').toLowerCase();
+      const isQuota =
+        msg.includes('rate limit') || msg.includes('quota') ||
+        msg.includes('tpd') || msg.includes('tpm') ||
+        msg.includes('does not exist') || msg.includes('decommissioned') ||
+        msg.includes('deprecated') || msg.includes('no longer supported') ||
+        msg.includes('exceeded') || msg.includes('limit reached');
+      if (isQuota) { lastErr = err; continue; }
+      throw err; // non-quota error — surface immediately
     }
   }
-  throw lastErr || new Error('All Groq keys and models exhausted.');
+  throw lastErr || new Error('All Groq keys exhausted.');
 }
+
+// Plan step: compound-mini → no reasoning tokens, clean JSON, low token cost
+const callGroqPlan   = (prompt) => callGroq(GROQ_PLAN_MODEL,   prompt, 400);
+// Answer step: qwen3.6-27b → reasoning model needs high max_tokens to finish thinking
+const callGroqAnswer = (prompt) => callGroq(GROQ_ANSWER_MODEL, prompt, 3000);
 
 // ── Field descriptions ─────────────────────────────────────────
 const FIELDS_DESC = `Each record: county (string), year (2021-2025), total_population,
@@ -262,11 +268,10 @@ module.exports = async (req, res) => {
   const records = Object.values(bundle?.county_summaries || {});
 
   try {
-    // Step 1 — parse query into a plan
-    // Use /no_think to suppress <think> reasoning blocks (qwen3 supports this suffix)
-    // and raise max_tokens so the JSON isn't truncated if the model still reasons
-    const planPrompt = `${QUERY_SYSTEM}\n\nQuestion: ${question}\n\nReturn only the JSON object: /no_think`;
-    const planRaw    = await callGroq(planPrompt, 1200);
+    // Step 1 — parse question into a structured query plan
+    // Uses groq/compound-mini: non-reasoning model → clean JSON, no <think> blocks
+    const planPrompt = `${QUERY_SYSTEM}\n\nQuestion: ${question}\n\nReturn only the JSON object:`;
+    const planRaw    = await callGroqPlan(planPrompt);
     const plan       = extractJSON(planRaw);
 
     if (!plan) {
@@ -299,7 +304,7 @@ Data: ${JSON.stringify(results.slice(0, 20))}
 
 Provide 3-5 numbered insight points:`;
 
-    const rawAnswer = await callGroq(answerPrompt, 800);
+    const rawAnswer = await callGroqAnswer(answerPrompt);
     const answer    = stripThinkTags(rawAnswer).replace(/\*\*/g, '').trim();
 
     res.status(200).json({ question, sql: `/* ${plan.intent} */`, results, answer, error: null });
