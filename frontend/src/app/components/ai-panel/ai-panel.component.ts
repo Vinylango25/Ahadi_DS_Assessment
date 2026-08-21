@@ -387,20 +387,22 @@ export class AIPanelComponent implements OnChanges {
     }
 
     if (points.length >= 2) {
+      // Badge + border cycle through distinct colors; titles are always dark orange
       const palette = [
-        { text: '#00d4aa', tint: 'rgba(0,212,170,0.09)'   },
-        { text: '#a78bfa', tint: 'rgba(167,139,250,0.09)' },
-        { text: '#ffab40', tint: 'rgba(255,171,64,0.09)'  },
-        { text: '#40c4ff', tint: 'rgba(64,196,255,0.09)'  },
-        { text: '#ff6b8a', tint: 'rgba(255,107,138,0.09)' },
+        { badge: '#00d4aa', tint: 'rgba(0,212,170,0.08)'   },
+        { badge: '#a78bfa', tint: 'rgba(167,139,250,0.08)' },
+        { badge: '#40c4ff', tint: 'rgba(64,196,255,0.08)'  },
+        { badge: '#00e676', tint: 'rgba(0,230,118,0.08)'   },
+        { badge: '#ff6b8a', tint: 'rgba(255,107,138,0.08)' },
       ];
+      const TITLE_COLOR = '#e65c00'; // dark orange for all subheadings
 
       return points.map((p, i) => {
-        const { text: color, tint } = palette[i % palette.length];
+        const { badge, tint } = palette[i % palette.length];
         return `
 <div style="
   border:1px solid rgba(255,255,255,0.08);
-  border-left:4px solid ${color};
+  border-left:4px solid ${badge};
   border-radius:12px;
   overflow:hidden;
   margin-bottom:10px;
@@ -420,7 +422,7 @@ export class AIPanelComponent implements OnChanges {
       justify-content:center;
       width:24px;height:24px;min-width:24px;
       border-radius:50%;
-      background:${color};
+      background:${badge};
       color:#0a0e27;
       font-size:0.74rem;
       font-weight:800;
@@ -429,7 +431,7 @@ export class AIPanelComponent implements OnChanges {
     <span style="
       font-size:0.92rem;
       font-weight:700;
-      color:${color};
+      color:${TITLE_COLOR};
       letter-spacing:0.01em;
       line-height:1.3;
     ">${p.title}</span>
