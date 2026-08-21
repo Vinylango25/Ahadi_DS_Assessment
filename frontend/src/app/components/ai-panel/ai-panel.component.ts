@@ -379,7 +379,6 @@ export class AIPanelComponent implements OnChanges {
       .trim();
 
     // 2. Split on \n\n — the API normalizeInsight() guarantees double-newlines between points.
-    //    Fallback sentinel approach handles any edge cases.
     const segments = clean
       .split(/\n\n+/)
       .map((s: string) => s.trim())
@@ -387,8 +386,9 @@ export class AIPanelComponent implements OnChanges {
 
     const points: Array<{num: string; title: string; body: string}> = [];
     for (const seg of segments) {
-      // Match "N. Title — body" where separator is any dash/em-dash variant
-      const m = seg.match(/^(\d+)\.\s+([^\n]+?)\s*[-\u2014\u2013]+\s*([\s\S]+)$/);
+      // Use only em-dash (—) or en-dash (–) as title/body separator, NOT plain hyphen
+      // to avoid splitting "Inter-County" or "Non-Communicable" mid-title
+      const m = seg.match(/^(\d+)\.\s+([^\n]+?)\s*[\u2014\u2013]\s*([\s\S]+)$/);
       if (m) {
         points.push({
           num:   m[1],
