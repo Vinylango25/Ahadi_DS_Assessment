@@ -145,47 +145,50 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-left: 4px solid var(--primary);
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  transition: box-shadow 0.2s ease;
   &:last-child { margin-bottom: 0; }
+  &:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.18); }
 }
 
 .insight-point-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 14px;
-  background: rgba(255,255,255,0.04);
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border);
+  // tinted bg is applied inline via style="background:..."
 }
 
 .insight-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
   border-radius: 50%;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  color: #0e2332;
+  flex-shrink: 0;
 }
 
 .insight-title {
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   font-weight: 700;
-  color: var(--text-primary);
   letter-spacing: 0.01em;
+  line-height: 1.3;
+  // color applied inline per point
 }
 
 .insight-body {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: var(--text-secondary);
-  line-height: 1.65;
+  line-height: 1.7;
   margin: 0;
-  padding: 10px 14px;
+  padding: 12px 16px;
 }
 
 // ── Query input ────────────────────────────────────────────────

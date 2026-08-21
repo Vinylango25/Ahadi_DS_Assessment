@@ -383,9 +383,14 @@ export class AIPanelComponent implements OnChanges {
       const colors = ['#00d4aa','#7c4dff','#ffab40','#40c4ff','#ff6b6b'];
       return points.map((p, i) => {
         const color = colors[i % colors.length];
+        // Convert hex to rgb for rgba() tint
+        const r = parseInt(color.slice(1,3),16);
+        const g = parseInt(color.slice(3,5),16);
+        const b = parseInt(color.slice(5,7),16);
+        const tint = `rgba(${r},${g},${b},0.08)`;
         return `<div class="insight-point" style="border-left-color:${color}">
-          <div class="insight-point-header">
-            <span class="insight-num" style="background:${color};color:#0e2332">${p.num}</span>
+          <div class="insight-point-header" style="background:${tint}">
+            <span class="insight-num" style="background:${color};color:#0a0e27">${p.num}</span>
             <span class="insight-title" style="color:${color}">${p.title}</span>
           </div>
           <p class="insight-body">${p.body}</p>
