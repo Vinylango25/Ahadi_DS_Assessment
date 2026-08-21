@@ -287,26 +287,30 @@ module.exports = async (req, res) => {
       return;
     }
 
-    // Step 2 — generate structured AI insight
-    const answerPrompt = `You are a Kenya population data analyst. Analyse the query results and provide exactly 3 to 5 numbered insight points.
+    // Step 2 — generate structured AI insight (exactly 5 points)
+    const answerPrompt = `You are a Kenya population data analyst. You MUST provide EXACTLY 5 numbered insight points — no more, no fewer. Do not stop before point 5.
 
 Each point MUST follow this exact format:
 N. Point Title — Explanation in 1-2 sentences using specific numbers from the data.
 
 Rules:
+- You MUST write all 5 points. Stop only after point 5.
 - Plain text only. No markdown, no asterisks, no bold symbols.
 - Use commas for thousands (e.g. 1,234,567).
-- Each point: short title (2-5 words) + dash + explanation.
-- Reference actual values from the data.
-- Be analytical — explain what the numbers mean.
+- Each point: short title (2-5 words) — explanation with actual numbers from the data.
+- Be analytical — explain what the numbers mean, not just what they are.
+- Draw from different angles: magnitude, comparison, ratios, trends, outliers.
 
 Question: ${question}
 Data: ${JSON.stringify(results.slice(0, 20))}
 
-Provide 3-5 numbered insight points:`;
+Write all 5 insight points now:
+1.`;
 
     const rawAnswer = await callGroqAnswer(answerPrompt);
-    const answer    = stripThinkTags(rawAnswer).replace(/\*\*/g, '').trim();
+    // The prompt ends with "1." so the model continues from there — prepend it back
+    const answerText = stripThinkTags(rawAnswer).replace(/\*\*/g, '').trim();
+    const answer = answerText.startsWith('1.') ? answerText : `1.${answerText}`;
 
     res.status(200).json({ question, sql: `/* ${plan.intent} */`, results, answer, error: null });
   } catch (err) {
