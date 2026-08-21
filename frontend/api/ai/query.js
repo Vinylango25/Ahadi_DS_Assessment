@@ -5,9 +5,19 @@ const fs    = require('fs');
 const path  = require('path');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GROQ_API_KEY   = process.env.GROQ_API_KEY   || '';
-// Use Groq with multiple model fallbacks — each has its own daily token limit
-const GROQ_MODELS = ['qwen/qwen3.6-27b', 'gemma2-9b-it'];
+
+// 4-key rotation: each key gets a fresh 200K TPD, all point to the same model
+// Keys tried in order; rotates to next key on rate-limit / quota exhaustion
+const GROQ_API_KEYS = [
+  process.env.GROQ_API_KEY   || '',
+  process.env.GROQ_API_KEY_2 || '',
+  process.env.GROQ_API_KEY_3 || '',
+  process.env.GROQ_API_KEY_4 || '',
+  process.env.GROQ_API_KEY_5 || '',
+].filter(Boolean);
+
+// Primary model; extend the list if additional free models become available
+const GROQ_MODELS = ['qwen/qwen3.6-27b'];
 
 // ── Helpers ────────────────────────────────────────────────────
 function stripThinkTags(text) {
@@ -36,8 +46,8 @@ function loadPopulationData() {
   return null;
 }
 
-// ── Groq API call with model fallback chain ────────────────────
-function callGroqModel(model, prompt, maxTokens) {
+// ── Groq API call ──────────────────────────────────────────────
+function callGroqModel(apiKey, model, prompt, maxTokens) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
       model,
@@ -47,9 +57,11 @@ function callGroqModel(model, prompt, maxTokens) {
     });
     const req = https.request({
       hostname: 'api.groq.com', path: '/openai/v1/chat/completions', method: 'POST',
-      headers: { 'Content-Type': 'application/json',
-                 'Authorization': `Bearer ${GROQ_API_KEY}`,
-                 'Content-Length': Buffer.byteLength(body) },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Length': Buffer.byteLength(body),
+      },
     }, (res) => {
       let d = ''; res.on('data', c => d += c);
       res.on('end', () => {
@@ -64,20 +76,29 @@ function callGroqModel(model, prompt, maxTokens) {
   });
 }
 
+// Rotate: for every (key × model) combination until one succeeds.
+// Rotates to the next key on any rate-limit / quota / decommission error.
 async function callGroq(prompt, maxTokens) {
+  if (!GROQ_API_KEYS.length) throw new Error('No Groq API keys configured.');
   let lastErr;
-  for (const model of GROQ_MODELS) {
-    try { return await callGroqModel(model, prompt, maxTokens); }
-    catch (err) {
-      const msg = (err.message || '').toLowerCase();
-      if (msg.includes('rate limit') || msg.includes('quota') || msg.includes('token') ||
-          msg.includes('tpd') || msg.includes('tpm') || msg.includes('does not exist') || msg.includes('decommissioned') || msg.includes('deprecated') || msg.includes('no longer supported')) {
-        lastErr = err; continue;
+  for (const apiKey of GROQ_API_KEYS) {
+    for (const model of GROQ_MODELS) {
+      try {
+        return await callGroqModel(apiKey, model, prompt, maxTokens);
+      } catch (err) {
+        const msg = (err.message || '').toLowerCase();
+        const isQuota =
+          msg.includes('rate limit') || msg.includes('quota') ||
+          msg.includes('tpd') || msg.includes('tpm') ||
+          msg.includes('does not exist') || msg.includes('decommissioned') ||
+          msg.includes('deprecated') || msg.includes('no longer supported') ||
+          msg.includes('exceeded') || msg.includes('limit reached');
+        if (isQuota) { lastErr = err; continue; }
+        throw err; // non-quota error — surface immediately
       }
-      throw err;
     }
   }
-  throw lastErr;
+  throw lastErr || new Error('All Groq keys and models exhausted.');
 }
 
 // ── Field descriptions ─────────────────────────────────────────
@@ -232,8 +253,8 @@ module.exports = async (req, res) => {
   const question = (req.body?.question || '').trim();
   if (!question) { res.status(400).json({ detail: 'question is required' }); return; }
 
-  if (!GROQ_API_KEY) {
-    res.status(200).json({ question, sql: null, results: [], answer: 'AI query requires GROQ_API_KEY.', error: null });
+  if (!GROQ_API_KEYS.length) {
+    res.status(200).json({ question, sql: null, results: [], answer: 'AI query requires at least one GROQ_API_KEY.', error: null });
     return;
   }
 
