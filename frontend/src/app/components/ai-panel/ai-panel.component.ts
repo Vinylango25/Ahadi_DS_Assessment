@@ -88,7 +88,21 @@ interface AIInsightResponse {
                 <span class="material-symbols-rounded">auto_awesome</span>
                 <span>{{ countyName ? countyName + ' · ' + year : 'Kenya · ' + year }}</span>
               </div>
-              <div class="insight-text" [innerHTML]="formatInsight(insightText()!)"></div>
+              @if (insightPoints().length >= 2) {
+                <div class="insight-points">
+                  @for (pt of insightPoints(); track $index) {
+                    <div class="ip-card" [style.--ip-color]="pointColor($index)">
+                      <div class="ip-header">
+                        <span class="ip-badge">{{ $index + 1 }}</span>
+                        <span class="ip-title">{{ pt.title }}</span>
+                      </div>
+                      <p class="ip-body">{{ pt.body }}</p>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="insight-text" [innerHTML]="formatInsight(insightText()!)"></div>
+              }
             </div>
           }
 
@@ -246,6 +260,7 @@ export class AIPanelComponent implements OnChanges {
   readonly loadingInsight = signal(false);
   readonly loadingQuery   = signal(false);
   readonly insightText    = signal<string | null>(null);
+  readonly insightPoints  = signal<InsightPoint[]>([]);
   readonly insightError   = signal<string | null>(null);
   readonly queryResult    = signal<NLQueryResult | null>(null);
 
@@ -271,6 +286,7 @@ export class AIPanelComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['countyName'] || changes['year']) {
       this.insightText.set(null);
+      this.insightPoints.set([]);
       this.insightError.set(null);
     }
   }
@@ -284,6 +300,7 @@ export class AIPanelComponent implements OnChanges {
     this.loadingInsight.set(true);
     this.insightError.set(null);
     this.insightText.set(null);
+    this.insightPoints.set([]);
 
     this.http.get<AIInsightResponse>(
       `${environment.apiUrl}/api/ai/county-insight`,
@@ -293,7 +310,10 @@ export class AIPanelComponent implements OnChanges {
       this.loadingInsight.set(false);
       return of(null);
     })).subscribe(res => {
-      if (res) this.insightText.set(res.insight);
+      if (res) {
+        this.insightPoints.set(res.points?.length ? res.points : []);
+        this.insightText.set(res.insight);
+      }
       this.loadingInsight.set(false);
     });
   }
@@ -303,6 +323,7 @@ export class AIPanelComponent implements OnChanges {
     this.loadingInsight.set(true);
     this.insightError.set(null);
     this.insightText.set(null);
+    this.insightPoints.set([]);
 
     this.http.get<AIInsightResponse>(
       `${environment.apiUrl}/api/ai/national-insight`,
@@ -312,7 +333,10 @@ export class AIPanelComponent implements OnChanges {
       this.loadingInsight.set(false);
       return of(null);
     })).subscribe(res => {
-      if (res) this.insightText.set(res.insight);
+      if (res) {
+        this.insightPoints.set(res.points?.length ? res.points : []);
+        this.insightText.set(res.insight);
+      }
       this.loadingInsight.set(false);
     });
   }
@@ -367,7 +391,11 @@ export class AIPanelComponent implements OnChanges {
     return String(val);
   }
 
-  // ── Insight formatter (numbered cards — fully inline styled) ─
+  // ── Point card color palette ──────────────────────────────
+  private readonly PALETTE = ['#00d4aa','#a78bfa','#40c4ff','#00e676','#ff6b8a'];
+  pointColor(i: number): string { return this.PALETTE[i % this.PALETTE.length]; }
+
+  // ── Insight formatter (fallback for when points array is empty) ─
   // Must use inline styles because Angular's Emulated encapsulation
   // scopes SCSS classes and they won't match innerHTML-injected HTML.
   formatInsight(text: string): string {

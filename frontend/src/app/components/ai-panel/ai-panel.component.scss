@@ -548,3 +548,65 @@
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+
+// ── ip-card: structured insight point cards (rendered from API points[]) ──
+.insight-points {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.ip-card {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-left: 4px solid var(--ip-color, #00d4aa);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface, #0e1a2b);
+  transition: box-shadow 0.2s ease;
+
+  &:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+}
+
+.ip-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--ip-color, #00d4aa) 12%, transparent);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  box-sizing: border-box;
+}
+
+.ip-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 50%;
+  background: var(--ip-color, #00d4aa);
+  color: #0a0e27;
+  font-size: 0.75rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.ip-title {
+  flex: 1;
+  font-size: 0.91rem;
+  font-weight: 700;
+  color: #e65c00;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+
+.ip-body {
+  font-size: 0.84rem;
+  color: var(--text-secondary, #94a3b8);
+  line-height: 1.7;
+  margin: 0;
+  padding: 11px 16px;
+}
