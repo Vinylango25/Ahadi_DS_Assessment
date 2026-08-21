@@ -306,30 +306,33 @@ export class AIPanelComponent implements OnChanges {
   formatInsight(text: string): string {
     if (!text) return '';
 
-    // Strip any leftover <think> blocks that slipped through
+    // Strip any leftover <think> blocks
     let clean = text
       .replace(/<think>[\s\S]*?<\/think>/gi, '')
       .replace(/<think>[\s\S]*/gi, '')
+      .replace(/\*\*/g, '')   // strip ALL markdown bold stars
       .trim();
 
-    // Parse numbered points: "1. **Title** — body" or "1. **Title**: body"
-    const pointRegex = /(\d+)\.\s+\*\*([^*]+)\*\*\s*[—–:-]+\s*([\s\S]*?)(?=\n\s*\d+\.|$)/g;
+    // Parse: "1. Title - body"  or  "1. Title — body"
+    const pointRegex = /(\d+)\.\s+([^-—\n]+?)\s*[-—–]+\s*([\s\S]*?)(?=\n\s*\d+\.\s+|$)/g;
     const points: Array<{num: string; title: string; body: string}> = [];
     let match;
     while ((match = pointRegex.exec(clean)) !== null) {
-      points.push({ num: match[1], title: match[2].trim(), body: match[3].trim() });
+      points.push({ num: match[1], title: match[2].trim(), body: match[3].trim().replace(/\n/g, ' ') });
     }
 
     if (points.length >= 3) {
-      // Render as professional numbered insight cards
-      return points.map(p => `
-        <div class="insight-point">
+      const colors = ['#00d4aa','#7c4dff','#ffab40','#40c4ff','#00e676'];
+      return points.map((p, i) => {
+        const color = colors[i % colors.length];
+        return `<div class="insight-point" style="border-left-color:${color}">
           <div class="insight-point-header">
-            <span class="insight-num">${p.num}</span>
+            <span class="insight-num" style="background:${color};color:#0e2332">${p.num}</span>
             <span class="insight-title">${p.title}</span>
           </div>
-          <p class="insight-body">${p.body.replace(/\n/g, ' ')}</p>
-        </div>`).join('');
+          <p class="insight-body">${p.body}</p>
+        </div>`;
+      }).join('');
     }
 
     // Fallback: plain paragraphs

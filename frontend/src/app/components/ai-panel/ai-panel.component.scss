@@ -332,6 +332,50 @@
   .material-symbols-rounded { font-size: 1rem; flex-shrink: 0; }
 }
 
+// ── Numbered insight cards ──────────────────────────────────
+.insight-point {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  &:last-child { margin-bottom: 0; }
+}
+.insight-point-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--border);
+}
+.insight-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #0e2332;
+}
+.insight-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+.insight-body {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0;
+  padding: 10px 14px;
+}
+
 // ── Animations ────────────────────────────────────────────────
 .animate-fade-in {
   animation: fadeIn 0.4s ease;
@@ -347,9 +391,9 @@
 .insight-point {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--primary);
+  border-left: 4px solid var(--primary);
   border-radius: 10px;
-  padding: 12px 16px;
+  overflow: hidden;
   margin-bottom: 10px;
 
   &:last-child { margin-bottom: 0; }
@@ -359,33 +403,34 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 6px;
+  padding: 9px 14px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--border);
 }
 
 .insight-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
   border-radius: 50%;
-  background: var(--primary);
-  color: #0e2332;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  flex-shrink: 0;
 }
 
 .insight-title {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-primary);
+  letter-spacing: 0.01em;
 }
 
 .insight-body {
   font-size: 0.82rem;
   color: var(--text-secondary);
-  line-height: 1.6;
+  line-height: 1.65;
   margin: 0;
-  padding-left: 34px;
+  padding: 10px 14px;
 }
