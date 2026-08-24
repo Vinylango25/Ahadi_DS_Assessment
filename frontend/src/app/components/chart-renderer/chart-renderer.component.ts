@@ -185,8 +185,14 @@ export function classifyChart(
     return { kind: 'bar-horizontal', title: intentTitle(intent) };
   }
 
-  // ── 12. Small N (≤ 12) with single metric → bar-horizontal (not funnel/dot)
-  if (n <= 12 && numKeys.length === 1) {
+  // ── 12. Small N (≤ 8) single metric ordered list → funnel when ranking
+  // Funnel works well for top-N rankings where the visual hierarchy matters
+  if (n >= 3 && n <= 8 && numKeys.length === 1) {
+    const isFunnelCandidate =
+      i.includes('top ') || i.includes('highest') || i.includes('most') ||
+      i.includes('largest') || i.includes('rank');
+    if (isFunnelCandidate) return { kind: 'funnel', title: intentTitle(intent) };
+    // Otherwise bar is clearer for small sets
     return { kind: 'bar-horizontal', title: intentTitle(intent) };
   }
 
