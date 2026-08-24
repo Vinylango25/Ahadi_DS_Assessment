@@ -7,6 +7,7 @@ import {
   OnChanges,
   SimpleChanges,
   inject,
+  effect,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
@@ -36,6 +37,15 @@ export class AgePyramidComponent implements OnChanges {
   private readonly cdr = inject(ChangeDetectorRef);
 
   chartOption: EChartsOption = {};
+
+  constructor() {
+    // Rebuild chart whenever dark/light theme toggles
+    effect(() => {
+      void this.theme.isDark(); // track the signal
+      this.buildChart();
+      this.cdr.markForCheck();
+    });
+  }
 
   ngOnChanges(_changes: SimpleChanges): void {
     this.buildChart();
@@ -181,12 +191,13 @@ export class AgePyramidComponent implements OnChanges {
   }
 
   private emptyOption(): EChartsOption {
+    const isDark = this.theme.isDark();
     return {
       title: {
         text: 'No data available',
         left: 'center',
         top: 'middle',
-        textStyle: { color: 'rgba(255,255,255,0.3)', fontSize: 14 },
+        textStyle: { color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)', fontSize: 14 },
       },
     };
   }

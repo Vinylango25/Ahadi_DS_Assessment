@@ -8,6 +8,7 @@ import {
   OnChanges,
   SimpleChanges,
   inject,
+  effect,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
@@ -61,6 +62,14 @@ export class TimeseriesChartComponent implements OnChanges {
 
   chartOption: EChartsOption = {};
   hasData = false;
+
+  constructor() {
+    effect(() => {
+      void this.theme.isDark();
+      this.buildChart();
+      this.cdr.markForCheck();
+    });
+  }
 
   ngOnChanges(_: SimpleChanges): void {
     this.buildChart();
