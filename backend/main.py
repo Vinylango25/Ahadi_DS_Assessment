@@ -282,13 +282,14 @@ def get_choropleth(
 
     for feature in geojson.get("features", []):
         props = feature.setdefault("properties", {})
-        # GADM Level-2 stores the county name in NAME_2.
+        # GADM Level-2: NAME_2 is constituency/ward number; NAME_1 is the county name.
         county_name: str = (
-            props.get("NAME_2") or props.get("name") or props.get("NAME") or ""
+            props.get("NAME_1") or props.get("NAME_2") or props.get("name") or props.get("NAME") or ""
         )
         matched = data_by_county.get(county_name.lower(), {})
 
         props["value"] = matched.get("value")
+        props["name"] = county_name          # expose county name for frontend tooltip/matching
         props["total_population"] = matched.get("total_population")
         props["dependency_ratio"] = matched.get("dependency_ratio")
         props["sex_ratio"] = matched.get("sex_ratio")

@@ -74,12 +74,21 @@ export class ApiService {
       .set('indicator', indicator);
     return this.http.get<GeoJSON.FeatureCollection>(`${this.base}/api/choropleth`, { params }).pipe(
       map(geojson => {
-        const entries = (geojson.features ?? [])
+        // GADM Level-2: NAME_1 = county, NAME_2 = constituency number.
+        // The backend also sets props['name'] = NAME_1 for convenience.
+        const rawEntries = (geojson.features ?? [])
           .filter(f => f.properties?.['value'] != null)
           .map(f => ({
-            county: f.properties!['NAME_2'] ?? f.properties!['name'] ?? '',
+            county: (f.properties!['NAME_1'] ?? f.properties!['name'] ?? '') as string,
             value: f.properties!['value'] as number,
           }));
+        // Deduplicate by county — 300 ward features collapse to 47 counties.
+        // Each ward carries the same county-level value so we just take the first.
+        const seen = new Map<string, number>();
+        for (const e of rawEntries) {
+          if (e.county && !seen.has(e.county)) seen.set(e.county, e.value);
+        }
+        const entries = Array.from(seen.entries()).map(([county, value]) => ({ county, value }));
         const values = entries.map(e => e.value).filter(isFinite);
         return {
           year,
