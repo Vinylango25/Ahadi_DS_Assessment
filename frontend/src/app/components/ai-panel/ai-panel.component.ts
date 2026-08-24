@@ -11,6 +11,7 @@ import {
   signal,
   computed,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -119,22 +120,26 @@ interface AIInsightResponse {
       @if (activeTab() === 'query') {
         <div class="query-body">
 
-          <!-- Example chips — National group + County group (synced to filters) -->
+          <!-- Example chips:
+               - No county selected → both National + County (default Nairobi) groups
+               - County selected    → only County group with that county's questions -->
           <div class="example-section">
-            <div class="example-group">
-              <span class="example-group-label">
-                <span class="material-symbols-rounded">public</span> National
-              </span>
-              <div class="example-chips">
-                @for (q of nationalQuestions; track q) {
-                  <button class="example-chip" (click)="setQuestion(q)">{{ q }}</button>
-                }
+            @if (!countyName) {
+              <div class="example-group">
+                <span class="example-group-label">
+                  <span class="material-symbols-rounded">public</span> National
+                </span>
+                <div class="example-chips">
+                  @for (q of nationalQuestions; track q) {
+                    <button class="example-chip" (click)="setQuestion(q)">{{ q }}</button>
+                  }
+                </div>
               </div>
-            </div>
+            }
             <div class="example-group">
               <span class="example-group-label">
                 <span class="material-symbols-rounded">location_on</span>
-                {{ countyName || 'County' }}
+                {{ countyName || 'Example — Nairobi' }}
               </span>
               <div class="example-chips">
                 @for (q of countyQuestions(); track q) {
@@ -286,6 +291,7 @@ export class AIPanelComponent implements OnChanges {
   @Input() summary: CountySummary | null = null;
 
   private readonly http = inject(HttpClient);
+  private readonly cdr  = inject(ChangeDetectorRef);
 
   readonly activeTab      = signal<'insight' | 'query'>('query');
   readonly loadingInsight = signal(false);
@@ -338,6 +344,7 @@ export class AIPanelComponent implements OnChanges {
       this.insightText.set(null);
       this.insightPoints.set([]);
       this.insightError.set(null);
+      this.cdr.markForCheck(); // re-evaluate countyQuestions() in OnPush
     }
   }
 
