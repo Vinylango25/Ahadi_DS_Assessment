@@ -33,8 +33,9 @@ data/raw/
 !data/raw/.gitkeep
 
 # ── Database ─────────────────────────────────────────────────
-backend/ahadi.db
-backend/*.db
+# Pre-seeded DB is committed so Render starts with data immediately
+# backend/ahadi.db   ← intentionally tracked
+backend/*.db.bak
 *.sqlite
 *.sqlite3
 

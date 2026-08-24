@@ -392,3 +392,392 @@
 2026-08-20 13:46:21 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
 2026-08-20 13:46:21 | INFO     | Boundary file loaded: 300 features.
 2026-08-20 13:46:21 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
+2026-08-20 14:07:23 | INFO     | ============================================================
+2026-08-20 14:07:23 | INFO     | STARTING FULL VALIDATION RUN
+2026-08-20 14:07:23 | INFO     | ============================================================
+2026-08-20 14:07:23 | INFO     | Completeness check: 180 expected, 150 present, 30 missing.
+2026-08-20 14:07:23 | WARNING  | Year 2021: 6/36 combinations missing (17%) → decision: impute.
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_0_2021_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_1_2021_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_5_2021_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_0_2021_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_1_2021_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_5_2021_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  | Year 2022: 6/36 combinations missing (17%) → decision: impute.
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_0_2022_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_1_2022_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_5_2022_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_0_2022_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_1_2022_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_5_2022_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  | Year 2023: 6/36 combinations missing (17%) → decision: impute.
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_0_2023_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_1_2023_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_5_2023_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_0_2023_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_1_2023_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_5_2023_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  | Year 2024: 6/36 combinations missing (17%) → decision: impute.
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_0_2024_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_1_2024_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_5_2024_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_0_2024_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_1_2024_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_5_2024_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  | Year 2025: 6/36 combinations missing (17%) → decision: impute.
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_0_2025_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_1_2025_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_f_5_2025_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_0_2025_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_1_2025_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | WARNING  |   MISSING [IMPUTE]: ken_m_5_2025_CN_1km_R2025A_UA_v1.tif
+2026-08-20 14:07:23 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
+2026-08-20 14:07:24 | INFO     | Boundary file loaded: 300 features.
+2026-08-20 14:07:24 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
+2026-08-20 16:19:57 | INFO     | ============================================================
+2026-08-20 16:19:57 | INFO     | STARTING FULL VALIDATION RUN
+2026-08-20 16:19:57 | INFO     | ============================================================
+2026-08-20 16:19:57 | INFO     | Completeness check: 200 expected, 200 present, 0 missing.
+2026-08-20 16:19:57 | INFO     | Year 2021: all combinations present.
+2026-08-20 16:19:57 | INFO     | Year 2022: all combinations present.
+2026-08-20 16:19:57 | INFO     | Year 2023: all combinations present.
+2026-08-20 16:19:57 | INFO     | Year 2024: all combinations present.
+2026-08-20 16:19:57 | INFO     | Year 2025: all combinations present.
+2026-08-20 16:19:57 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
+2026-08-20 16:19:58 | INFO     | Boundary file loaded: 300 features.
+2026-08-20 16:19:58 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
+2026-08-20 16:30:39 | INFO     | ============================================================
+2026-08-20 16:30:39 | INFO     | STARTING FULL VALIDATION RUN
+2026-08-20 16:30:39 | INFO     | ============================================================
+2026-08-20 16:30:39 | INFO     | Completeness check: 200 expected, 200 present, 0 missing.
+2026-08-20 16:30:39 | INFO     | Year 2021: all combinations present.
+2026-08-20 16:30:39 | INFO     | Year 2022: all combinations present.
+2026-08-20 16:30:39 | INFO     | Year 2023: all combinations present.
+2026-08-20 16:30:39 | INFO     | Year 2024: all combinations present.
+2026-08-20 16:30:39 | INFO     | Year 2025: all combinations present.
+2026-08-20 16:30:39 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
+2026-08-20 16:30:39 | INFO     | Boundary file loaded: 300 features.
+2026-08-20 16:30:39 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
+2026-08-20 16:30:39 | INFO     | Raster CRS OK for 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-20 16:30:39 | INFO     | Checking for negative values in 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:39 | INFO     | 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-20 16:30:39 | INFO     | Checking zero coverage in 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:39 | INFO     | 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-20 16:30:39 | INFO     | Raster CRS OK for 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-20 16:30:39 | INFO     | Checking for negative values in 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:39 | INFO     | 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-20 16:30:39 | INFO     | Checking zero coverage in 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:39 | INFO     | 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-20 16:30:39 | INFO     | Raster CRS OK for 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-20 16:30:39 | INFO     | Checking for negative values in 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:39 | INFO     | 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-20 16:30:39 | INFO     | Checking zero coverage in 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:39 | INFO     | 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-20 16:30:39 | INFO     | Raster CRS OK for 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-20 16:30:39 | INFO     | Checking for negative values in 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:39 | INFO     | 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-20 16:30:39 | INFO     | Checking zero coverage in 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:39 | INFO     | 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-20 16:30:39 | INFO     | Raster CRS OK for 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-20 16:30:39 | INFO     | Checking for negative values in 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:39 | INFO     | 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-20 16:30:39 | INFO     | Checking zero coverage in 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:39 | INFO     | 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-20 16:30:39 | INFO     | Raster CRS OK for 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-20 16:30:39 | INFO     | Checking for negative values in 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:39 | INFO     | 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-20 16:30:39 | INFO     | Checking zero coverage in 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:39 | INFO     | 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-20 16:30:39 | INFO     | Raster CRS OK for 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-20 16:30:39 | INFO     | Checking for negative values in 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:40 | INFO     | 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-20 16:30:40 | INFO     | Checking zero coverage in 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:40 | INFO     | 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-20 16:30:40 | INFO     | Raster CRS OK for 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-20 16:30:40 | INFO     | Checking for negative values in 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:40 | INFO     | 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-20 16:30:40 | INFO     | Checking zero coverage in 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:40 | INFO     | 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-20 16:30:40 | INFO     | Raster CRS OK for 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-20 16:30:40 | INFO     | Checking for negative values in 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:40 | INFO     | 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-20 16:30:40 | INFO     | Checking zero coverage in 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:40 | INFO     | 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-20 16:30:40 | INFO     | Raster CRS OK for 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-20 16:30:40 | INFO     | Checking for negative values in 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:40 | INFO     | 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-20 16:30:40 | INFO     | Checking zero coverage in 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-20 16:30:40 | INFO     | 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-20 16:30:40 | INFO     | VALIDATION COMPLETE — overall passed: True
+2026-08-20 16:30:40 | INFO     | ============================================================
+2026-08-20 16:30:40 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
+2026-08-20 16:30:40 | INFO     | Boundary file loaded: 300 features.
+2026-08-20 16:30:40 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
+2026-08-24 09:29:34 | INFO     | ============================================================
+2026-08-24 09:29:34 | INFO     | STARTING FULL VALIDATION RUN
+2026-08-24 09:29:34 | INFO     | ============================================================
+2026-08-24 09:29:34 | INFO     | Completeness check: 200 expected, 200 present, 0 missing.
+2026-08-24 09:29:34 | INFO     | Year 2021: all combinations present.
+2026-08-24 09:29:34 | INFO     | Year 2022: all combinations present.
+2026-08-24 09:29:34 | INFO     | Year 2023: all combinations present.
+2026-08-24 09:29:34 | INFO     | Year 2024: all combinations present.
+2026-08-24 09:29:34 | INFO     | Year 2025: all combinations present.
+2026-08-24 09:29:34 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
+2026-08-24 09:29:34 | INFO     | Boundary file loaded: 300 features.
+2026-08-24 09:29:34 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
+2026-08-24 09:29:34 | INFO     | Raster CRS OK for 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 09:29:34 | INFO     | Checking for negative values in 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:34 | INFO     | 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 09:29:34 | INFO     | Checking zero coverage in 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:34 | INFO     | 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 09:29:34 | INFO     | Raster CRS OK for 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 09:29:34 | INFO     | Checking for negative values in 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:34 | INFO     | 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 09:29:34 | INFO     | Checking zero coverage in 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:34 | INFO     | 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 09:29:34 | INFO     | Raster CRS OK for 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 09:29:34 | INFO     | Checking for negative values in 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:34 | INFO     | 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 09:29:34 | INFO     | Checking zero coverage in 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 09:29:35 | INFO     | Raster CRS OK for 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 09:29:35 | INFO     | Checking for negative values in 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 09:29:35 | INFO     | Checking zero coverage in 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 09:29:35 | INFO     | Raster CRS OK for 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 09:29:35 | INFO     | Checking for negative values in 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 09:29:35 | INFO     | Checking zero coverage in 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 09:29:35 | INFO     | Raster CRS OK for 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 09:29:35 | INFO     | Checking for negative values in 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 09:29:35 | INFO     | Checking zero coverage in 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 09:29:35 | INFO     | Raster CRS OK for 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 09:29:35 | INFO     | Checking for negative values in 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 09:29:35 | INFO     | Checking zero coverage in 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 09:29:35 | INFO     | Raster CRS OK for 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 09:29:35 | INFO     | Checking for negative values in 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 09:29:35 | INFO     | Checking zero coverage in 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 09:29:35 | INFO     | Raster CRS OK for 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 09:29:35 | INFO     | Checking for negative values in 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 09:29:35 | INFO     | Checking zero coverage in 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 09:29:35 | INFO     | Raster CRS OK for 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 09:29:35 | INFO     | Checking for negative values in 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 09:29:35 | INFO     | Checking zero coverage in 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 09:29:35 | INFO     | 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 09:29:35 | INFO     | VALIDATION COMPLETE — overall passed: True
+2026-08-24 09:29:35 | INFO     | ============================================================
+2026-08-24 09:29:35 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
+2026-08-24 09:29:35 | INFO     | Boundary file loaded: 300 features.
+2026-08-24 09:29:35 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
+2026-08-24 10:41:30 | INFO     | ============================================================
+2026-08-24 10:41:30 | INFO     | STARTING FULL VALIDATION RUN
+2026-08-24 10:41:30 | INFO     | ============================================================
+2026-08-24 10:41:30 | INFO     | Completeness check: 200 expected, 200 present, 0 missing.
+2026-08-24 10:41:30 | INFO     | Year 2021: all combinations present.
+2026-08-24 10:41:30 | INFO     | Year 2022: all combinations present.
+2026-08-24 10:41:30 | INFO     | Year 2023: all combinations present.
+2026-08-24 10:41:30 | INFO     | Year 2024: all combinations present.
+2026-08-24 10:41:30 | INFO     | Year 2025: all combinations present.
+2026-08-24 10:41:30 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
+2026-08-24 10:41:31 | INFO     | Boundary file loaded: 300 features.
+2026-08-24 10:41:31 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
+2026-08-24 10:41:31 | INFO     | Raster CRS OK for 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:41:31 | INFO     | Checking for negative values in 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:31 | INFO     | 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:41:31 | INFO     | Checking zero coverage in 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:31 | INFO     | 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:41:31 | INFO     | Raster CRS OK for 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:41:31 | INFO     | Checking for negative values in 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:31 | INFO     | 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:41:31 | INFO     | Checking zero coverage in 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:31 | INFO     | 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:41:31 | INFO     | Raster CRS OK for 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:41:31 | INFO     | Checking for negative values in 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:31 | INFO     | 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:41:31 | INFO     | Checking zero coverage in 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:31 | INFO     | 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:41:32 | INFO     | Raster CRS OK for 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:41:32 | INFO     | Checking for negative values in 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:41:32 | INFO     | Checking zero coverage in 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:41:32 | INFO     | Raster CRS OK for 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:41:32 | INFO     | Checking for negative values in 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:41:32 | INFO     | Checking zero coverage in 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:41:32 | INFO     | Raster CRS OK for 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:41:32 | INFO     | Checking for negative values in 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:41:32 | INFO     | Checking zero coverage in 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:41:32 | INFO     | Raster CRS OK for 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:41:32 | INFO     | Checking for negative values in 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:41:32 | INFO     | Checking zero coverage in 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:41:32 | INFO     | Raster CRS OK for 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:41:32 | INFO     | Checking for negative values in 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:41:32 | INFO     | Checking zero coverage in 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:41:32 | INFO     | Raster CRS OK for 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:41:32 | INFO     | Checking for negative values in 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:41:32 | INFO     | Checking zero coverage in 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:41:32 | INFO     | Raster CRS OK for 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:41:32 | INFO     | Checking for negative values in 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:41:32 | INFO     | Checking zero coverage in 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:41:32 | INFO     | 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:41:32 | INFO     | VALIDATION COMPLETE — overall passed: True
+2026-08-24 10:41:32 | INFO     | ============================================================
+2026-08-24 10:41:32 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
+2026-08-24 10:41:32 | INFO     | Boundary file loaded: 300 features.
+2026-08-24 10:41:32 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
+2026-08-24 10:43:28 | INFO     | ============================================================
+2026-08-24 10:43:28 | INFO     | STARTING FULL VALIDATION RUN
+2026-08-24 10:43:28 | INFO     | ============================================================
+2026-08-24 10:43:28 | INFO     | Completeness check: 200 expected, 200 present, 0 missing.
+2026-08-24 10:43:28 | INFO     | Year 2021: all combinations present.
+2026-08-24 10:43:28 | INFO     | Year 2022: all combinations present.
+2026-08-24 10:43:28 | INFO     | Year 2023: all combinations present.
+2026-08-24 10:43:28 | INFO     | Year 2024: all combinations present.
+2026-08-24 10:43:28 | INFO     | Year 2025: all combinations present.
+2026-08-24 10:43:28 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
+2026-08-24 10:43:28 | INFO     | Boundary file loaded: 300 features.
+2026-08-24 10:43:28 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
+2026-08-24 10:43:28 | INFO     | Raster CRS OK for 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:43:28 | INFO     | Checking for negative values in 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:43:28 | INFO     | Checking zero coverage in 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:43:28 | INFO     | Raster CRS OK for 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:43:28 | INFO     | Checking for negative values in 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:43:28 | INFO     | Checking zero coverage in 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:43:28 | INFO     | Raster CRS OK for 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:43:28 | INFO     | Checking for negative values in 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:43:28 | INFO     | Checking zero coverage in 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:43:28 | INFO     | Raster CRS OK for 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:43:28 | INFO     | Checking for negative values in 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:43:28 | INFO     | Checking zero coverage in 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:43:28 | INFO     | Raster CRS OK for 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:43:28 | INFO     | Checking for negative values in 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:43:28 | INFO     | Checking zero coverage in 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:43:28 | INFO     | Raster CRS OK for 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:43:28 | INFO     | Checking for negative values in 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:43:28 | INFO     | Checking zero coverage in 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:43:28 | INFO     | Raster CRS OK for 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:43:28 | INFO     | Checking for negative values in 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:43:28 | INFO     | Checking zero coverage in 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:43:28 | INFO     | Raster CRS OK for 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:43:28 | INFO     | Checking for negative values in 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:43:28 | INFO     | Checking zero coverage in 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:28 | INFO     | 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:43:28 | INFO     | Raster CRS OK for 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:43:28 | INFO     | Checking for negative values in 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:29 | INFO     | 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:43:29 | INFO     | Checking zero coverage in 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:29 | INFO     | 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:43:29 | INFO     | Raster CRS OK for 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 10:43:29 | INFO     | Checking for negative values in 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:29 | INFO     | 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 10:43:29 | INFO     | Checking zero coverage in 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 10:43:29 | INFO     | 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 10:43:29 | INFO     | VALIDATION COMPLETE — overall passed: True
+2026-08-24 10:43:29 | INFO     | ============================================================
+2026-08-24 10:43:29 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
+2026-08-24 10:43:29 | INFO     | Boundary file loaded: 300 features.
+2026-08-24 10:43:29 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
+2026-08-24 12:17:49 | INFO     | ============================================================
+2026-08-24 12:17:49 | INFO     | STARTING FULL VALIDATION RUN
+2026-08-24 12:17:49 | INFO     | ============================================================
+2026-08-24 12:17:49 | INFO     | Completeness check: 200 expected, 200 present, 0 missing.
+2026-08-24 12:17:49 | INFO     | Year 2021: all combinations present.
+2026-08-24 12:17:49 | INFO     | Year 2022: all combinations present.
+2026-08-24 12:17:49 | INFO     | Year 2023: all combinations present.
+2026-08-24 12:17:49 | INFO     | Year 2024: all combinations present.
+2026-08-24 12:17:49 | INFO     | Year 2025: all combinations present.
+2026-08-24 12:17:49 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
+2026-08-24 12:17:49 | INFO     | Boundary file loaded: 300 features.
+2026-08-24 12:17:49 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
+2026-08-24 12:17:49 | INFO     | Raster CRS OK for 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 12:17:49 | INFO     | Checking for negative values in 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 12:17:49 | INFO     | Checking zero coverage in 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_00_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 12:17:49 | INFO     | Raster CRS OK for 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 12:17:49 | INFO     | Checking for negative values in 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 12:17:49 | INFO     | Checking zero coverage in 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_01_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 12:17:49 | INFO     | Raster CRS OK for 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 12:17:49 | INFO     | Checking for negative values in 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 12:17:49 | INFO     | Checking zero coverage in 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_05_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 12:17:49 | INFO     | Raster CRS OK for 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 12:17:49 | INFO     | Checking for negative values in 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 12:17:49 | INFO     | Checking zero coverage in 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_10_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 12:17:49 | INFO     | Raster CRS OK for 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 12:17:49 | INFO     | Checking for negative values in 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 12:17:49 | INFO     | Checking zero coverage in 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_15_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 12:17:49 | INFO     | Raster CRS OK for 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 12:17:49 | INFO     | Checking for negative values in 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 12:17:49 | INFO     | Checking zero coverage in 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_20_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 12:17:49 | INFO     | Raster CRS OK for 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 12:17:49 | INFO     | Checking for negative values in 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 12:17:49 | INFO     | Checking zero coverage in 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_25_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 12:17:49 | INFO     | Raster CRS OK for 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 12:17:49 | INFO     | Checking for negative values in 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:49 | INFO     | 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 12:17:49 | INFO     | Checking zero coverage in 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:50 | INFO     | 'ken_m_30_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 12:17:50 | INFO     | Raster CRS OK for 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 12:17:50 | INFO     | Checking for negative values in 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:50 | INFO     | 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 12:17:50 | INFO     | Checking zero coverage in 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:50 | INFO     | 'ken_m_35_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 12:17:50 | INFO     | Raster CRS OK for 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': EPSG:4326. ✓
+2026-08-24 12:17:50 | INFO     | Checking for negative values in 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:50 | INFO     | 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': no negative values found. ✓
+2026-08-24 12:17:50 | INFO     | Checking zero coverage in 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif'.
+2026-08-24 12:17:50 | INFO     | 'ken_m_40_2021_CN_1km_R2025A_UA_v1.tif': zero-coverage check passed (0.0% zeros). ✓
+2026-08-24 12:17:50 | INFO     | VALIDATION COMPLETE — overall passed: True
+2026-08-24 12:17:50 | INFO     | ============================================================
+2026-08-24 12:17:50 | INFO     | Loading boundary file: C:\Users\GCA17695\Desktop\Ahadi\data\gadm41_KEN_2.json
+2026-08-24 12:17:50 | INFO     | Boundary file loaded: 300 features.
+2026-08-24 12:17:50 | INFO     | Boundary CRS confirmed: EPSG:4326. ✓
