@@ -3,7 +3,7 @@
 > **AHADI Data Scientist Technical Assessment Submission**  
 > Kenya county-level demographic analytics: reproducible data pipeline + interactive full-stack dashboard
 
-🌍 **Live Demo:** [https://frontend-sandy-tau-56.vercel.app](https://frontend-sandy-tau-56.vercel.app)  
+🌍 **Live Demo:** [https://frontend-sandy-tau-56.vercel.app/dashboard](https://frontend-sandy-tau-56.vercel.app/dashboard)  
 📦 **Repository:** [https://github.com/Vinylango25/Ahadi_DS_Assessment](https://github.com/Vinylango25/Ahadi_DS_Assessment)
 
 ---
@@ -39,7 +39,7 @@ This project processes 2021–2025 [WorldPop](https://www.worldpop.org/) age- an
 | Charts | Apache ECharts (ngx-echarts) |
 | Map | Leaflet.js |
 | AI Insights | Groq API (LLaMA 3.1-8b-instant) |
-| Deployment | Vercel (frontend) + Docker Compose (full-stack local) |
+| Deployment | Vercel (frontend) + Render Docker (backend) |
 
 ---
 
@@ -234,6 +234,8 @@ https://data.worldpop.org/GIS/AgeSex_structures/Global_2000_2020_1km_UNadj/
 - **Caching:** skips files already present in `data/raw/` — no redundant downloads
 - 3 retry attempts with exponential backoff; graceful 404 handling and logging
 
+> **Data availability note:** The WorldPop `Global_2000_2020` unconstrained dataset covers years up to 2020 only. The pipeline code is structured for 2021–2025 as specified in the assessment. Since the 2021–2025 rasters return 404, the processed CSV (`data/processed/kenya_population_by_county.csv`) was generated using `generate_population_data.py`, which applies 2009–2019 KNBS intercensal county-specific growth rates to the official 2019 Kenya census baseline to project 2021–2025 values. All 10 required indicators are computed identically to the raster pipeline.
+
 ### 1.2 Data Validation & Cleaning (`src/validation.py`)
 
 - Parses filenames to extract sex, age group, and year
@@ -366,29 +368,107 @@ d907453  fix: update vercel.json to modern buildCommand/outputDirectory format
 
 ## Deployment
 
+This project uses a **split-deploy** architecture:
+
+| Layer | Platform | URL |
+|-------|----------|-----|
+| Frontend (Angular) | Vercel | https://frontend-sandy-tau-56.vercel.app |
+| Backend (FastAPI) | Render (Docker) | https://ahadi-ds-assessment.onrender.com |
+
+The backend requires GDAL, rasterio, and GeoPandas native binaries which cannot run on Vercel's serverless platform. Render's Docker-based web services support these dependencies.
+
+---
+
+### Backend — Render (live)
+
+The FastAPI backend is deployed as a **Docker web service** on Render.
+
+**How it was set up:**
+1. Render → New → Web Service → connect `Vinylango25/Ahadi_DS_Assessment`
+2. Environment: **Docker** | Branch: `main` | Dockerfile: `./Dockerfile`
+3. Instance type: Free (spins down after 15 min inactivity — first request after idle takes ~50 s)
+4. Environment variables set in Render dashboard:
+
+| Variable | Value |
+|----------|-------|
+| `GROQ_API_KEY` | *(your key)* |
+| `ALLOWED_ORIGINS` | `https://frontend-sandy-tau-56.vercel.app` |
+
+**API base URL:** `https://ahadi-ds-assessment.onrender.com`  
+**Swagger docs:** https://ahadi-ds-assessment.onrender.com/docs
+
+> **Cold-start warning (free tier):** Render's free instances spin down after 15 minutes of inactivity. The first request after a period of no traffic can take 50 seconds or more to respond while the container restarts. Subsequent requests are fast. Upgrade to a paid instance to eliminate cold starts.
+
+**To redeploy manually:**
+```bash
+# Push any commit to main — Render auto-deploys on every push
+git push origin main
+```
+
+**To run locally instead:**
+```bash
+docker-compose up --build
+# Backend → http://localhost:8000
+```
+
+---
+
 ### Frontend — Vercel (live)
 
-The Angular app deploys from the `frontend/` subdirectory to avoid Vercel auto-detecting FastAPI:
-
-```bash
-# Requires: npm install -g vercel && vercel login
-vercel deploy --prod --yes --cwd frontend/
-```
+The Angular app deploys from the `frontend/` subdirectory. A `.vercelignore` at the root excludes the Python backend so Vercel does not try to deploy FastAPI.
 
 **Live URL:** https://frontend-sandy-tau-56.vercel.app
 
-> In production the frontend uses a relative `apiUrl: ''` — it expects the backend to be on the same origin. To point at a separate backend, set `apiUrl` in `frontend/src/environments/environment.prod.ts` before building.
+**How to redeploy after any frontend change:**
+```bash
+# 1. Build the Angular production bundle
+cd frontend
+npm run build -- --configuration production
 
-### Backend — Docker / self-hosted
+# 2. Deploy to Vercel
+vercel deploy --prod --yes --cwd frontend/
+```
 
-The FastAPI backend requires GDAL/rasterio native binaries and cannot run on Vercel's serverless platform.
+**Pointing the frontend at the backend:**
+
+The production API URL is set in `frontend/src/environments/environment.prod.ts`:
+
+```typescript
+export const environment = {
+  production: true,
+  apiUrl: 'https://ahadi-ds-assessment.onrender.com',
+};
+```
+
+Change `apiUrl` here and redeploy if the backend URL ever changes.
+
+---
+
+### Architecture diagram
+
+```
+Browser
+  │
+  ├─► Vercel CDN  (Angular SPA — static files)
+  │     frontend-sandy-tau-56.vercel.app
+  │
+  └─► Render Docker  (FastAPI + SQLite + GDAL)
+        ahadi-ds-assessment.onrender.com
+              │
+              ├─ /api/*        REST endpoints
+              ├─ /api/pipeline  Pipeline runner
+              └─ /docs          Swagger UI
+```
+
+---
+
+### Other deployment options
 
 | Platform | How to deploy |
 |----------|--------------|
 | **Local (Docker)** | `docker-compose up --build` |
-| **Railway** | Connect repo → set `GROQ_API_KEY` → deploy `Dockerfile` |
-| **Render** | New web service → Docker → set env vars |
-| **Any VPS** | `docker build -t ahadi . && docker run -p 8000:8000 ahadi` |
+| **Any VPS** | `docker build -t ahadi . && docker run -p 8000:8000 --env-file .env ahadi` |
+| **Railway** | Connect repo → Docker environment → set env vars → deploy |
 
 ---
 
