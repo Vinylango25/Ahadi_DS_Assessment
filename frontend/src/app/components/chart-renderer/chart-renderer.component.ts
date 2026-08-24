@@ -8,6 +8,7 @@ import {
   OnChanges,
   SimpleChanges,
   inject,
+  effect,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
@@ -274,6 +275,13 @@ const PALETTE_VIVID  = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc
       /* Ensure canvas text is readable in both modes */
       color-scheme: dark light;
     }
+    @media (max-width: 768px) {
+      .cr-canvas { height: 260px; }
+      .cr-title  { font-size: 0.76rem; }
+    }
+    @media (max-width: 480px) {
+      .cr-canvas { height: 220px; }
+    }
   `],
 })
 export class ChartRendererComponent implements OnChanges {
@@ -285,6 +293,14 @@ export class ChartRendererComponent implements OnChanges {
 
   option: EChartsOption = {};
   get isDark(): boolean { return this.themeService.isDark(); }
+
+  constructor() {
+    effect(() => {
+      void this.themeService.isDark(); // track theme signal
+      this.buildOption();
+      this.cdr.markForCheck();
+    });
+  }
 
   ngOnChanges(_: SimpleChanges): void {
     this.buildOption();
@@ -315,10 +331,11 @@ export class ChartRendererComponent implements OnChanges {
   // ── Master builder ───────────────────────────────────────
   private buildOption(): void {
     if (!this.config || !this.results.length) { this.option = {}; return; }
-    // Always dark — consistent with the dashboard theme
-    const text  = 'rgba(232,234,246,0.9)';
-    const text2 = 'rgba(200,210,230,0.65)';
-    const grid  = 'rgba(255,255,255,0.08)';
+    // Theme-aware colors
+    const dark  = this.isDark;
+    const text  = dark ? 'rgba(232,234,246,0.9)'  : 'rgba(20,20,40,0.85)';
+    const text2 = dark ? 'rgba(200,210,230,0.65)' : 'rgba(40,40,80,0.55)';
+    const grid  = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
     const bg    = 'transparent';
 
     const base: EChartsOption = {
@@ -711,28 +728,56 @@ export class ChartRendererComponent implements OnChanges {
       itemStyle: { color: PALETTE_TEAL[i % PALETTE_TEAL.length] },
     }));
     const total = data.reduce((s, d) => s + (d.value || 0), 0);
+
     return {
       tooltip: {
         trigger: 'item',
-        formatter: (p: any) => `<b>${p.name}</b><br/>${this.fmt(p.value)} (${p.percent?.toFixed(1)}%)`,
+        backgroundColor: this.isDark ? 'rgba(21,25,55,0.97)' : 'rgba(255,255,255,0.97)',
+        borderColor: 'rgba(0,212,170,0.3)',
+        borderWidth: 1,
+        textStyle: { color: this.isDark ? '#e8eaf6' : '#111', fontSize: 12 },
+        formatter: (p: any) =>
+          `<b>${p.name}</b><br/>${this.fmtHeader(vk)}: <b style="color:#00d4aa">${this.fmt(p.value)}</b><br/>Share: <b>${p.percent?.toFixed(1)}%</b>`,
       },
-      legend: { orient: 'vertical', right: 0, top: 'center',
-                textStyle: { color: text, fontSize: 10 }, itemHeight: 10 },
+      legend: {
+        orient: 'vertical', right: 4, top: 'center',
+        textStyle: { color: text, fontSize: 10 }, itemHeight: 10,
+        formatter: (name: string) => {
+          const d = data.find(x => x.name === name);
+          const pct = d && total > 0 ? ((d.value / total) * 100).toFixed(1) : '0';
+          return `${name}  (${pct}%)`;
+        },
+      },
       series: [{
         type: 'pie',
-        radius: donut ? ['42%', '68%'] : '68%',
-        center: ['40%', '50%'],
+        radius: donut ? ['40%', '65%'] : '65%',
+        center: ['38%', '50%'],
         data,
-        label: { color: text, fontSize: 10,
-                 formatter: donut ? (p: any) => p.name + '\n' + this.fmt(p.value) : undefined },
-        labelLine: { length: 10, length2: 8 },
-        emphasis: { scale: true, scaleSize: 8,
-                    itemStyle: { shadowBlur: 12, shadowColor: 'rgba(0,0,0,0.3)' } },
+        label: {
+          show: true,
+          color: text,
+          fontSize: 10,
+          fontWeight: 600,
+          // Show: "County Name\n1.23M (45.6%)"
+          formatter: (p: any) =>
+            `${p.name}\n${this.fmt(p.value)} (${p.percent?.toFixed(1)}%)`,
+        },
+        labelLine: { length: 12, length2: 10, smooth: true },
+        emphasis: {
+          scale: true, scaleSize: 8,
+          itemStyle: { shadowBlur: 12, shadowColor: 'rgba(0,0,0,0.3)' },
+          label: { fontSize: 11, fontWeight: 700 },
+        },
         ...(donut ? {
           graphic: [{
             type: 'text',
-            left: '36%', top: '46%',
-            style: { text: this.fmt(total), fill: text, fontSize: 15, fontWeight: 700, textAlign: 'center' },
+            left: '33%', top: '44%',
+            style: { text: this.fmt(total), fill: '#00d4aa', fontSize: 16, fontWeight: 700, textAlign: 'center' },
+          },
+          {
+            type: 'text',
+            left: '33%', top: '58%',
+            style: { text: 'Total', fill: text, fontSize: 10, textAlign: 'center' },
           }] as any,
         } : {}),
       }],
@@ -747,12 +792,32 @@ export class ChartRendererComponent implements OnChanges {
       value: r[vk] as number,
       itemStyle: { color: PALETTE_WARM[i % PALETTE_WARM.length] },
     }));
+    const total = data.reduce((s, d) => s + (d.value || 0), 0);
     return {
-      tooltip: { trigger: 'item', formatter: (p: any) => `<b>${p.name}</b>: ${this.fmt(p.value)}` },
-      legend: { bottom: 0, textStyle: { color: text, fontSize: 9 }, itemHeight: 8 },
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: this.isDark ? 'rgba(21,25,55,0.97)' : 'rgba(255,255,255,0.97)',
+        borderColor: 'rgba(0,212,170,0.3)', borderWidth: 1,
+        textStyle: { color: this.isDark ? '#e8eaf6' : '#111', fontSize: 12 },
+        formatter: (p: any) =>
+          `<b>${p.name}</b><br/>${this.fmt(p.value)}<br/><b>${p.percent?.toFixed(1)}%</b>`,
+      },
+      legend: {
+        bottom: 0, textStyle: { color: text, fontSize: 9 }, itemHeight: 8,
+        formatter: (name: string) => {
+          const d = data.find(x => x.name === name);
+          const pct = d && total > 0 ? ((d.value / total) * 100).toFixed(1) : '0';
+          return `${name}  ${pct}%`;
+        },
+      },
       series: [{
-        type: 'pie', roseType: 'area', radius: ['15%', '68%'], center: ['50%', '48%'],
-        data, label: { color: text, fontSize: 9 },
+        type: 'pie', roseType: 'area', radius: ['15%', '65%'], center: ['50%', '46%'],
+        data,
+        label: {
+          show: true, color: text, fontSize: 9,
+          formatter: (p: any) => `${p.name}\n${p.percent?.toFixed(1)}%`,
+        },
+        labelLine: { length: 8, length2: 6 },
         emphasis: { scale: true, scaleSize: 6 },
       }],
     };

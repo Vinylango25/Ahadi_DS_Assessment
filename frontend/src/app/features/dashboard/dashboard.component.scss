@@ -27,6 +27,7 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  @media (max-width: 480px) { font-size: 1.25rem; }
 }
 
 .title-year-badge {
@@ -136,22 +137,29 @@
   display: flex;
   align-items: flex-end;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
   margin: 0 32px 20px;
   padding: 16px 20px;
   background: var(--glass);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border);
   border-radius: 16px;
-  @media (max-width: 768px) { margin: 0 16px 16px; padding: 12px; }
+  @media (max-width: 768px) { margin: 0 16px 16px; padding: 12px; gap: 10px; }
 }
 
 .filter-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 140px;
-  &.filter-wide { min-width: 220px; }
+  min-width: 130px;
+  flex: 1;
+  &.filter-wide { min-width: 180px; flex: 2; }
+  @media (max-width: 480px) {
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 100%;
+    &.filter-wide { flex: 1 1 100%; }
+  }
 }
 
 .filter-label {
@@ -260,6 +268,12 @@
   @media (max-width: 900px) { grid-template-columns: 1fr; }
 }
 
+// Prevent columns from blowing out the grid
+.interpretation-col,
+.ai-col {
+  min-width: 0;
+}
+
 .section-label {
   display: flex;
   align-items: center;
@@ -295,6 +309,8 @@
   border-bottom: 1px solid var(--divider);
   flex-wrap: wrap;
   flex-shrink: 0;
+  min-width: 0;
+  @media (max-width: 480px) { padding: 10px 12px; gap: 8px; }
 }
 
 .panel-title {

@@ -40,14 +40,8 @@ export class ThemeService {
   // ── Private helpers ──────────────────────────────────────────
 
   private _loadPreference(): boolean {
-    try {
-      const stored = localStorage.getItem(THEME_KEY);
-      if (stored !== null) return stored === 'dark';
-    } catch {
-      // localStorage unavailable (SSR or private browsing)
-    }
-    // Fall back to OS preference
-    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true;
+    // Dark mode is always the default — ignore stored or OS preference
+    return true;
   }
 
   private _savePreference(dark: boolean): void {
