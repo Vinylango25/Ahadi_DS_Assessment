@@ -78,4 +78,4 @@ def init_db() -> None:
     # Local import prevents circular imports at module load time.
     from backend import models  # noqa: F401  — side-effect import registers models
 
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine, checkfirst=True)
