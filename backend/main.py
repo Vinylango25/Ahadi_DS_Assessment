@@ -437,26 +437,37 @@ def get_comparison(
 @app.get(
     "/api/age-pyramid",
     tags=["Analytics"],
-    summary="Age-sex pyramid data for a county",
+    summary="Age-sex pyramid data for a county or national aggregate",
     response_model=schemas.AgePyramid,
 )
 def get_age_pyramid(
-    county: str = Query(..., description="County name, e.g. 'Nairobi'."),
+    county: Optional[str] = Query(None, description="County name, e.g. 'Nairobi'. Omit or pass 'Kenya' for the national pyramid."),
     year: int = Query(2025, description="Projection year."),
     db: Session = Depends(get_db),
 ) -> schemas.AgePyramid:
     """
     Return an estimated age-sex pyramid for the specified county and year.
 
+    Pass ``county=Kenya`` (or omit ``county``) to get the national aggregate
+    pyramid summed across all 47 counties.
+
     Because the processed dataset stores only *aggregate* age-group totals
     (children under 5, working age 15–64, elderly 65+), the per-band
     breakdown is estimated by rescaling a stylised sub-Saharan African age
     distribution to match the known aggregate counts.  The sex split per
     band is derived from the stored sex ratio.
-
-    These estimates are suitable for illustrative dashboard visualisations
-    but should not be used for precise demographic analysis.
     """
+    national_scope = not county or county.strip().lower() in ("kenya", "national", "all")
+
+    if national_scope:
+        pyramid = crud.get_national_pyramid_data(db, year=year)
+        if pyramid is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No national data found for year={year}.",
+            )
+        return pyramid
+
     pyramid = crud.get_age_pyramid_data(db, county=county, year=year)
     if pyramid is None:
         raise HTTPException(
@@ -573,7 +584,7 @@ def _run_pipeline_background() -> None:
         proc = subprocess.run(
             [sys.executable, "-m", "src.pipeline"],
             cwd=str(_PROJECT_ROOT),
-            capture_output=True, text=True, timeout=600,
+            capture_output=True, text=True, timeout=1800,
         )
         stdout_lines = (proc.stdout or "").splitlines()
         _pipeline_status["log_tail"].extend(stdout_lines[-20:])

@@ -543,6 +543,80 @@ def get_age_pyramid_data(
     return schemas.AgePyramid(county=record.county, year=year, age_groups=age_groups)
 
 
+def get_national_pyramid_data(
+    db: Session,
+    year: int,
+) -> Optional[schemas.AgePyramid]:
+    """
+    Return a national age-sex pyramid by summing all county records for *year*.
+
+    Uses the same stylised age-distribution estimation as
+    :func:`get_age_pyramid_data`, applied to the national aggregate totals.
+    """
+    rows = (
+        db.query(
+            func.sum(PopulationRecord.total_population).label("total_population"),
+            func.sum(PopulationRecord.children_under_5).label("children_under_5"),
+            func.sum(PopulationRecord.working_age).label("working_age"),
+            func.sum(PopulationRecord.elderly_65plus).label("elderly_65plus"),
+            func.avg(PopulationRecord.sex_ratio).label("avg_sex_ratio"),
+        )
+        .filter(PopulationRecord.year == year)
+        .first()
+    )
+
+    if rows is None or rows.total_population is None:
+        return None
+
+    total    = float(rows.total_population or 0)
+    children = float(rows.children_under_5 or 0)
+    working  = float(rows.working_age or 0)
+    elderly  = float(rows.elderly_65plus or 0)
+    r = float(rows.avg_sex_ratio or 100.0) / 100.0
+
+    male_frac   = r / (1.0 + r)
+    female_frac = 1.0 - male_frac
+
+    _band_to_group: Dict[str, str] = {
+        "0-4": "children",
+        "5-9": "working", "10-14": "working",
+        "15-19": "working", "20-24": "working", "25-29": "working",
+        "30-34": "working", "35-39": "working", "40-44": "working",
+        "45-49": "working", "50-54": "working", "55-59": "working",
+        "60-64": "working",
+        "65-69": "elderly", "70-74": "elderly",
+        "75-79": "elderly", "80+": "elderly",
+    }
+
+    group_totals = {"children": children, "working": working, "elderly": elderly}
+    group_band_shares: Dict[str, Dict[str, float]] = {
+        "children": {}, "working": {}, "elderly": {},
+    }
+    for band, grp in _band_to_group.items():
+        group_band_shares[grp][band] = _TYPICAL_AGE_SHARE[band]
+
+    for grp, bands in group_band_shares.items():
+        total_share = sum(bands.values())
+        if total_share > 0:
+            for band in bands:
+                group_band_shares[grp][band] /= total_share
+
+    age_groups: List[schemas.AgeGroup] = []
+    for band in _AGE_BANDS:
+        grp = _band_to_group[band]
+        grp_total = group_totals[grp]
+        band_total = grp_total * group_band_shares[grp].get(band, 0.0)
+        age_groups.append(
+            schemas.AgeGroup(
+                age_group=band,
+                male=round(band_total * male_frac, 1),
+                female=round(band_total * female_frac, 1),
+            )
+        )
+
+    return schemas.AgePyramid(county="Kenya", year=year, age_groups=age_groups)
+
+
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------

@@ -119,10 +119,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly nationalStats = computed(() => {
     const entries = this.choroplethData()?.entries ?? [];
     if (!entries.length) return null;
-    const vals = entries.map(e => e.value).filter(isFinite);
+    // Deduplicate by county — Level-2 GeoJSON has multiple ward features per county
+    const seen = new Map<string, number>();
+    for (const e of entries) {
+      if (!seen.has(e.county) && isFinite(e.value)) seen.set(e.county, e.value);
+    }
+    const uniqueEntries = Array.from(seen.entries()).map(([county, value]) => ({ county, value }));
+    const vals = uniqueEntries.map(e => e.value);
     const total = vals.reduce((s, v) => s + v, 0);
     const max   = Math.max(...vals);
-    const topCounty = entries.find(e => e.value === max);
+    const topCounty = uniqueEntries.find(e => e.value === max);
     return { total, max, topCounty };
   });
 
@@ -220,12 +226,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const nat: Record<string, number> = {};
       for (const [ind, data] of Object.entries(results)) {
         if (!data) continue;
-        const vals = data.entries.map(e => e.value).filter(isFinite);
-        if (!vals.length) continue;
+        // Deduplicate by county name — the choropleth GeoJSON is Level-2 (wards)
+        // so each county appears multiple times with the same value. Take unique counties.
+        const seen = new Set<string>();
+        const uniqueVals: number[] = [];
+        for (const entry of data.entries) {
+          if (!seen.has(entry.county) && isFinite(entry.value)) {
+            seen.add(entry.county);
+            uniqueVals.push(entry.value);
+          }
+        }
+        if (!uniqueVals.length) continue;
         const isRatio = /ratio|sex_ratio/.test(ind);
         nat[ind] = isRatio
-          ? vals.reduce((s, v) => s + v, 0) / vals.length
-          : vals.reduce((s, v) => s + v, 0);
+          ? uniqueVals.reduce((s, v) => s + v, 0) / uniqueVals.length
+          : uniqueVals.reduce((s, v) => s + v, 0);
       }
       this.allNationalValues.set(nat);
     });

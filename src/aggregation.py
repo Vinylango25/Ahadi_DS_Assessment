@@ -146,6 +146,8 @@ def aggregate_year(
         age-sex group (e.g. ``pop_m_0``, ``pop_f_0``, …) plus a
         ``year`` column.
     """
+    import concurrent.futures
+
     logger.info("Aggregating rasters for year %d…", year)
 
     # Build filename → path lookup for quick access
@@ -153,25 +155,35 @@ def aggregate_year(
 
     # Start from county names
     county_names = gdf[county_col].tolist() if county_col in gdf.columns else list(range(len(gdf)))
-    rows: Dict[str, np.ndarray] = {"county": np.array(county_names)}
 
+    # Build the list of (col_name, raster_path | None) tasks
+    tasks: List[tuple] = []
     for sex in SUPPORTED_SEXES:
         for age in SUPPORTED_AGES:
             filename = build_worldpop_filename(sex, age, year)
             col = f"pop_{sex}_{age}"
+            raster_path = file_index.get(filename)
+            tasks.append((col, raster_path))
 
-            if filename not in file_index:
-                logger.warning("Missing raster for %s — filling column '%s' with NaN.", filename, col)
-                rows[col] = np.full(len(gdf), np.nan)
-                continue
+    def _process(task):
+        col, raster_path = task
+        if raster_path is None:
+            logger.warning("Missing raster for col '%s' — filling with NaN.", col)
+            return col, np.full(len(gdf), np.nan)
+        try:
+            sums = zonal_sum(raster_path, gdf)
+            logger.debug("Completed zonal stats: %s (total=%.0f)", raster_path.name, sums.sum())
+            return col, sums
+        except Exception as exc:
+            logger.error("Zonal stats failed for '%s': %s — using NaN.", raster_path, exc)
+            return col, np.full(len(gdf), np.nan)
 
-            try:
-                sums = zonal_sum(file_index[filename], gdf)
-                rows[col] = sums
-                logger.debug("Completed zonal stats: %s (total=%.0f)", filename, sums.sum())
-            except Exception as exc:
-                logger.error("Zonal stats failed for '%s': %s — using NaN.", filename, exc)
-                rows[col] = np.full(len(gdf), np.nan)
+    # Process rasters in parallel — use up to 4 workers (safe for Render free tier)
+    rows: Dict[str, np.ndarray] = {"county": np.array(county_names)}
+    max_workers = min(4, len(tasks))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for col, sums in executor.map(_process, tasks):
+            rows[col] = sums
 
     df = pd.DataFrame(rows)
     df["year"] = year
