@@ -119,12 +119,29 @@ interface AIInsightResponse {
       @if (activeTab() === 'query') {
         <div class="query-body">
 
-          <!-- Example chips -->
-          <div class="example-row">
-            <span class="example-label">Try:</span>
-            @for (q of exampleQuestions; track q) {
-              <button class="example-chip" (click)="setQuestion(q)">{{ q }}</button>
-            }
+          <!-- Example chips — National group + County group (synced to filters) -->
+          <div class="example-section">
+            <div class="example-group">
+              <span class="example-group-label">
+                <span class="material-symbols-rounded">public</span> National
+              </span>
+              <div class="example-chips">
+                @for (q of nationalQuestions; track q) {
+                  <button class="example-chip" (click)="setQuestion(q)">{{ q }}</button>
+                }
+              </div>
+            </div>
+            <div class="example-group">
+              <span class="example-group-label">
+                <span class="material-symbols-rounded">location_on</span>
+                {{ countyName || 'County' }}
+              </span>
+              <div class="example-chips">
+                @for (q of countyQuestions(); track q) {
+                  <button class="example-chip chip-county" (click)="setQuestion(q)">{{ q }}</button>
+                }
+              </div>
+            </div>
           </div>
 
           <!-- Input row -->
@@ -280,14 +297,33 @@ export class AIPanelComponent implements OnChanges {
 
   userQuestion = '';
 
-  readonly exampleQuestions = [
+  // ── National sample questions (fixed) ────────────────────
+  readonly nationalQuestions = [
     'All 47 counties ranked by total population 2025',
     'Top 10 most populous counties in 2025',
+    'Bottom 5 counties by total population 2025',
     'Counties with population over 1 million in 2025',
-    'Population trend for Nairobi 2021 to 2025',
     'Counties where sex ratio exceeds 105 in 2025',
-    'Average dependency ratio 2025',
+    'Average dependency ratio across all counties 2025',
+    'Which county has the highest elderly population 2025',
+    'Counties with child dependency ratio above 60 in 2025',
   ];
+
+  // ── County sample questions (dynamic — react to countyName + year input) ──
+  countyQuestions(): string[] {
+    const c = this.countyName || 'Nairobi';
+    const y = this.year || 2025;
+    return [
+      `Population trend for ${c} 2021 to 2025`,
+      `Total population of ${c} in ${y}`,
+      `Dependency ratio for ${c} in ${y}`,
+      `Children under 5 in ${c} in ${y}`,
+      `Elderly population in ${c} in ${y}`,
+      `Sex ratio in ${c} in ${y}`,
+      `Working age population in ${c} in ${y}`,
+      `Compare ${c} to Nairobi in ${y}`,
+    ];
+  }
 
   // ── Chart config derived from query results ──────────────
   readonly chartConfig = computed((): ChartConfig | null => {
