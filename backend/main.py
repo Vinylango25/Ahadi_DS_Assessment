@@ -742,17 +742,20 @@ def get_county_insight(
     }
 
     try:
-        from backend.ai_insights import generate_county_insight
+        from backend.ai_insights import generate_county_insight, _friendly_error
         result = generate_county_insight(record_dict)
         insight = result.get("insight", "")
         points  = result.get("points", [])
+        error   = result.get("error")  # friendly error string or None
     except Exception as exc:
         logger.warning("AI insight failed: %s", exc)
-        insight = f"AI insights unavailable (configure GROQ_API_KEY). County: {county}, Year: {year}."
+        from backend.ai_insights import _friendly_error
+        error   = _friendly_error(exc)
+        insight = error
         points  = []
 
     return {"county": county, "year": year, "insight": insight, "points": points,
-            "ai_powered": bool(os.getenv("GROQ_API_KEY"))}
+            "ai_powered": bool(os.getenv("GROQ_API_KEY")), "error": error}
 
 
 @app.post(
@@ -811,10 +814,13 @@ def get_national_insight(
         result  = generate_national_insight(year=year, records=records)
         insight = result.get("insight", "")
         points  = result.get("points", [])
+        error   = result.get("error")
     except Exception as exc:
         logger.warning("National insight failed: %s", exc)
-        insight = f"AI insights unavailable (configure GROQ_API_KEY). Year: {year}."
+        from backend.ai_insights import _friendly_error
+        error   = _friendly_error(exc)
+        insight = error
         points  = []
 
     return {"year": year, "insight": insight, "points": points,
-            "ai_powered": bool(os.getenv("GROQ_API_KEY"))}
+            "ai_powered": bool(os.getenv("GROQ_API_KEY")), "error": error}

@@ -363,11 +363,16 @@ export class AIPanelComponent implements OnChanges {
       `${environment.apiUrl}/api/ai/county-insight`,
       { params: { county: this.countyName, year: this.year } }
     ).pipe(catchError(err => {
-      this.insightError.set(err?.error?.detail ?? 'AI insight unavailable. Ensure GROQ_API_KEY is configured.');
+      const msg = err?.error?.detail ?? err?.message ?? 'AI insight unavailable. Ensure GROQ_API_KEY is configured.';
+      this.insightError.set(msg);
       this.loadingInsight.set(false);
       return of(null);
     })).subscribe(res => {
       if (res) {
+        // Surface the friendly error from the backend (e.g. rate limit message)
+        if ((res as any).error) {
+          this.insightError.set((res as any).error);
+        }
         this.insightPoints.set(res.points?.length ? res.points : []);
         this.insightText.set(res.insight);
       }
@@ -386,11 +391,15 @@ export class AIPanelComponent implements OnChanges {
       `${environment.apiUrl}/api/ai/national-insight`,
       { params: { year: this.year } }
     ).pipe(catchError(err => {
-      this.insightError.set(err?.error?.detail ?? 'AI insight unavailable.');
+      const msg = err?.error?.detail ?? err?.message ?? 'AI insight unavailable.';
+      this.insightError.set(msg);
       this.loadingInsight.set(false);
       return of(null);
     })).subscribe(res => {
       if (res) {
+        if ((res as any).error) {
+          this.insightError.set((res as any).error);
+        }
         this.insightPoints.set(res.points?.length ? res.points : []);
         this.insightText.set(res.insight);
       }

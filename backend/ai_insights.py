@@ -37,24 +37,59 @@ _BACKEND_DIR = Path(__file__).resolve().parent
 _DB_PATH     = _BACKEND_DIR / "ahadi.db"
 
 
+# ── API key pool — reads GROQ_API_KEY, GROQ_API_KEY_2 … GROQ_API_KEY_5 ──────
+def _get_api_keys() -> list[str]:
+    """Collect all configured Groq API keys, deduplicated, non-empty."""
+    keys: list[str] = []
+    # Primary key
+    if GROQ_API_KEY:
+        keys.append(GROQ_API_KEY)
+    # Numbered extras (matching the Vercel/Render env var convention: _2 … _5)
+    for i in range(2, 6):
+        k = os.getenv(f"GROQ_API_KEY_{i}", "")
+        if k and k not in keys:
+            keys.append(k)
+    return keys
+
+
 # ── Client factory ─────────────────────────────────────────────────────────────
-def _get_client() -> Any:
+def _get_client(api_key: str) -> Any:
     if not _GROQ_AVAILABLE:
         raise RuntimeError("groq package not installed. Run: pip install groq")
-    if not GROQ_API_KEY:
+    if not api_key:
         raise RuntimeError("GROQ_API_KEY environment variable not set.")
-    return Groq(api_key=GROQ_API_KEY)
+    return Groq(api_key=api_key)
 
 
 def _call(model: str, prompt: str, max_tokens: int = 6000) -> str:
-    client = _get_client()
-    resp = client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=TEMPERATURE,
-        max_tokens=max_tokens,
-    )
-    return resp.choices[0].message.content.strip()
+    """Call Groq, rotating through all configured API keys on 429 rate-limit errors."""
+    keys = _get_api_keys()
+    if not keys:
+        raise RuntimeError("GROQ_API_KEY environment variable not set.")
+
+    last_exc: Exception = RuntimeError("No API keys available.")
+    for key in keys:
+        try:
+            client = _get_client(key)
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=TEMPERATURE,
+                max_tokens=max_tokens,
+            )
+            return resp.choices[0].message.content.strip()
+        except Exception as exc:
+            err_str = str(exc)
+            # On rate-limit (429 / tokens TPD/TPM), try next key
+            if "rate_limit_exceeded" in err_str or "429" in err_str:
+                log.warning("Key ending ...%s hit rate limit, trying next key. (%s)", key[-6:], exc)
+                last_exc = exc
+                continue
+            # Any other error (auth, model not found, etc.) — raise immediately
+            raise
+
+    # All keys exhausted
+    raise last_exc
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -116,7 +151,31 @@ def _parse_points(text: str) -> List[Dict[str, str]]:
     return points
 
 
-def _extract_json(text: str) -> Optional[Dict]:
+def _friendly_error(exc: Exception) -> str:
+    """Convert a Groq API exception into a short, user-friendly message."""
+    msg = str(exc)
+    # Rate limit (TPD or TPM)
+    if "rate_limit_exceeded" in msg or "429" in msg:
+        # Try to extract the retry time
+        import re as _re
+        wait = _re.search(r"try again in ([^.]+)", msg)
+        wait_str = f" Try again in {wait.group(1)}." if wait else " Please try again later."
+        return (
+            f"⏳ Daily token limit reached for the AI model.{wait_str} "
+            "You can upgrade at https://console.groq.com/settings/billing or wait for the limit to reset."
+        )
+    # No API key
+    if "GROQ_API_KEY" in msg or "api_key" in msg.lower() or "authentication" in msg.lower():
+        return "🔑 AI features require a GROQ_API_KEY. Add it in your .env file or Render dashboard."
+    # Model not found
+    if "model_not_found" in msg or "does not exist" in msg:
+        return "🤖 The configured AI model is unavailable. Check GROQ_MODEL in your environment."
+    # Generic quota / billing
+    if "quota" in msg.lower() or "billing" in msg.lower():
+        return "💳 AI quota exceeded. Check your Groq billing at https://console.groq.com/settings/billing."
+    # Generic fallback — still user-friendly, not a raw JSON blob
+    return "⚠️ AI service temporarily unavailable. Please try again in a moment."
+
     clean = _strip_think(text).replace("```json", "").replace("```", "").strip()
     s, e = clean.find("{"), clean.rfind("}")
     if s == -1 or e == -1:
@@ -179,8 +238,9 @@ def generate_county_insight(county_data: Dict[str, Any]) -> Dict[str, Any]:
         return {"insight": insight, "points": points, "ai_powered": True}
     except Exception as exc:
         log.warning("County insight failed: %s", exc)
+        friendly = _friendly_error(exc)
         fb = _fallback_insight(county_data)
-        return {"insight": fb, "points": [], "ai_powered": False, "error": str(exc)}
+        return {"insight": fb, "points": [], "ai_powered": False, "error": friendly}
 
 
 def generate_national_insight(year: int, records: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -213,8 +273,9 @@ def generate_national_insight(year: int, records: List[Dict[str, Any]]) -> Dict[
         return {"insight": insight, "points": points, "ai_powered": True}
     except Exception as exc:
         log.warning("National insight failed: %s", exc)
+        friendly = _friendly_error(exc)
         fallback = f"Kenya had an estimated population of {total_pop:,.0f} across 47 counties in {year}."
-        return {"insight": fallback, "points": [], "ai_powered": False, "error": str(exc)}
+        return {"insight": fallback, "points": [], "ai_powered": False, "error": friendly}
 
 
 # ── NL Query ──────────────────────────────────────────────────────────────────
@@ -332,8 +393,9 @@ def text_to_sql_query(question: str) -> Dict[str, Any]:
         result["answer"] = f"Database query error: {exc}"
     except Exception as exc:
         log.exception("text_to_sql error: %s", exc)
-        result["error"]  = str(exc)
-        result["answer"] = "I encountered an error processing your question. Please try rephrasing."
+        friendly = _friendly_error(exc)
+        result["error"]  = friendly
+        result["answer"] = friendly
 
     return result
 
