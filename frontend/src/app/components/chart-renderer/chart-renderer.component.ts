@@ -105,12 +105,18 @@ export function classifyChart(
 
   // ── 2. Time-series / trend (always a line chart) ───────────
   if (hasYear && hasCounty) {
-    const counties = [...new Set(results.map(r => r['county']))];
-    if (counties.length === 1 && n <= 10) return { kind: 'line-area',  title: intentTitle(intent) };
-    if (counties.length >= 2 && counties.length <= 6 && n <= 30) return { kind: 'line-multi', title: intentTitle(intent) };
+    const counties  = [...new Set(results.map(r => r['county']))];
+    const yearVals  = [...new Set(results.map(r => r['year']))];
+    // Only use line when we have multiple years (actual trend).
+    // Single-year multi-county → comparison → handled below as bar.
+    if (yearVals.length >= 2) {
+      if (counties.length === 1 && n <= 10)  return { kind: 'line-area',  title: intentTitle(intent) };
+      if (counties.length >= 2 && counties.length <= 6 && n <= 30) return { kind: 'line-multi', title: intentTitle(intent) };
+    }
   }
   if (hasYear && !hasCounty && n <= 10) {
-    return { kind: 'line-smooth-filled', title: intentTitle(intent) };
+    const yearVals = [...new Set(results.map(r => r['year']))];
+    if (yearVals.length >= 2) return { kind: 'line-smooth-filled', title: intentTitle(intent) };
   }
   // Explicit trend/timeseries keywords → line even without year column
   if (i.includes('trend') || i.includes('over years') || i.includes('2021') || i.includes('timeseries')) {
