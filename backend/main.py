@@ -271,10 +271,14 @@ def get_choropleth(
             detail="GeoJSON boundary file not found.",
         )
 
-    # Load the data rows keyed by county name.
+    # Load the data rows keyed by normalised county name.
+    # Normalise = lowercase + strip spaces so GADM "HomaBay" matches DB "Homa Bay".
+    def _norm(s: str) -> str:
+        return s.lower().replace(" ", "").replace("-", "")
+
     rows = crud.get_choropleth_data(db, year=year, indicator=indicator)
     data_by_county: Dict[str, Dict[str, Any]] = {
-        r["county"].lower(): r for r in rows
+        _norm(r["county"]): r for r in rows
     }
 
     with open(_GEOJSON_PATH, "r", encoding="utf-8") as f:
@@ -286,7 +290,7 @@ def get_choropleth(
         county_name: str = (
             props.get("NAME_1") or props.get("NAME_2") or props.get("name") or props.get("NAME") or ""
         )
-        matched = data_by_county.get(county_name.lower(), {})
+        matched = data_by_county.get(_norm(county_name), {})
 
         props["value"] = matched.get("value")
         props["name"] = county_name          # expose county name for frontend tooltip/matching
