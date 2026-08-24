@@ -529,7 +529,7 @@ export class AIPanelComponent implements OnChanges {
       return points.map((p, i) => {
         const { badge, tint } = palette[i % palette.length];
         const headerHtml = p.title
-          ? `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 16px;background:${tint};border-bottom:1px solid rgba(255,255,255,0.08);box-sizing:border-box;min-width:0;"><span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;min-width:26px;border-radius:50%;background:${badge};color:#0a0e27;font-size:0.75rem;font-weight:800;flex-shrink:0;margin-top:1px;">${p.num}</span><span style="flex:1;font-size:0.91rem;font-weight:700;color:${badge};letter-spacing:0.01em;line-height:1.3;word-break:break-word;">${p.title}</span></div>`
+          ? `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 16px;background:${tint};border-bottom:1px solid rgba(255,255,255,0.08);box-sizing:border-box;min-width:0;"><span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;min-width:26px;border-radius:50%;background:${badge};color:#0a0e27;font-size:0.75rem;font-weight:800;flex-shrink:0;margin-top:1px;">${p.num}</span><span style="flex:1;font-size:0.91rem;font-weight:700;color:#e65c00;letter-spacing:0.01em;line-height:1.3;word-break:break-word;">${p.title}</span></div>`
           : '';
         return `<div style="border:1px solid rgba(255,255,255,0.08);border-left:4px solid ${badge};border-radius:12px;overflow:hidden;margin-bottom:10px;background:var(--surface,#0e1a2b);min-width:0;">${headerHtml}<p style="font-size:0.84rem;color:var(--text-secondary,#94a3b8);line-height:1.7;margin:0;padding:11px 16px;word-break:break-word;">${p.body}</p></div>`;
       }).join('\n');
