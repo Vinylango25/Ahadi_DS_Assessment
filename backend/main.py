@@ -595,10 +595,18 @@ def _run_pipeline_background() -> None:
             _set_stage("seed_db", "running", 20, "Loading CSV into SQLite…")
             if _CSV_PATH.exists():
                 from backend.database import SessionLocal
+                from backend.models import PopulationRecord as _PR
+                from sqlalchemy import func as _sqlfunc
                 db_session = SessionLocal()
                 try:
+                    # Clear existing records so the pipeline output fully replaces them
+                    deleted = db_session.query(_PR).delete()
+                    db_session.commit()
+                    logger.info("Cleared %d existing records before reseeding.", deleted)
                     inserted = crud.load_csv_to_db(str(_CSV_PATH), db_session)
-                    _set_stage("seed_db", "completed", 100, f"Seeded {inserted} records into database.")
+                    total = db_session.query(_sqlfunc.count(_PR.id)).scalar() or 0
+                    msg = f"Replaced {deleted} old records. Inserted {inserted} new records ({total} total)."
+                    _set_stage("seed_db", "completed", 100, msg)
                 except Exception as e:
                     _set_stage("seed_db", "error", 0, str(e)[:200])
                 finally:

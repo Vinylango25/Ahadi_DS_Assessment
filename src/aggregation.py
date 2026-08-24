@@ -281,9 +281,16 @@ def add_county_area(df: pd.DataFrame, gdf: gpd.GeoDataFrame, county_col: str = "
     """
     try:
         gdf_ea = gdf.to_crs(epsg=6933)  # Equal-area
-        area_series = gdf_ea.geometry.area / 1e6  # m² → km²
+        # Dissolve to one polygon per county so area is the full county area
+        if county_col in gdf_ea.columns:
+            gdf_county = gdf_ea.dissolve(by=county_col).reset_index()
+            area_series = gdf_county.geometry.area / 1e6  # m² → km²
+            county_names = gdf_county[county_col].tolist()
+        else:
+            area_series = gdf_ea.geometry.area / 1e6
+            county_names = list(range(len(gdf_ea)))
         area_df = pd.DataFrame({
-            "county": gdf[county_col].tolist() if county_col in gdf.columns else list(range(len(gdf))),
+            "county": county_names,
             "county_area_km2": area_series.values,
         })
         df = df.merge(area_df, on="county", how="left")
@@ -361,6 +368,21 @@ def run_aggregation(
         raise RuntimeError("No years were successfully aggregated.")
 
     combined = pd.concat(frames, ignore_index=True)
+
+    # The GeoJSON may be Level-2 (ward/sub-county), giving multiple rows per
+    # county per year.  Collapse to one row per (county, year) by summing the
+    # raw pop_* columns before computing ratios.
+    pop_cols = [c for c in combined.columns if c.startswith("pop_")]
+    if pop_cols:
+        combined = (
+            combined
+            .groupby(["county", "year"], as_index=False)[pop_cols]
+            .sum()
+        )
+        logger.info(
+            "Collapsed sub-county rows to %d county×year records.", len(combined)
+        )
+
     combined = calculate_indicators(combined)
     combined = add_county_area(combined, gdf, county_col=county_col)
 
