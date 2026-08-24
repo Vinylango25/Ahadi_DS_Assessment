@@ -571,7 +571,7 @@ def _run_pipeline_background() -> None:
 
         # Run the actual pipeline
         proc = subprocess.run(
-            [sys.executable, "-m", "src.pipeline", "--no-download"],
+            [sys.executable, "-m", "src.pipeline"],
             cwd=str(_PROJECT_ROOT),
             capture_output=True, text=True, timeout=600,
         )
