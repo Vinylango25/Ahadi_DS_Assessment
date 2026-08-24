@@ -79,7 +79,7 @@ export interface ChartConfig {
 
 /**
  * Classify query intent + data shape → best chart type.
- * Priority rules: aggregate → time-series → RANKING → all-counties → pct → explicit scatter → other
+ * Priority rules: aggregate → time-series → RANKING → compare → all-counties → pct → scatter → other
  */
 export function classifyChart(
   intent: string,
@@ -103,7 +103,7 @@ export function classifyChart(
     return { kind: 'radar', title: intentTitle(intent) };
   }
 
-  // ── 2. Time-series / trend ─────────────────────────────────
+  // ── 2. Time-series / trend (always a line chart) ───────────
   if (hasYear && hasCounty) {
     const counties = [...new Set(results.map(r => r['county']))];
     if (counties.length === 1 && n <= 10) return { kind: 'line-area',  title: intentTitle(intent) };
@@ -112,8 +112,12 @@ export function classifyChart(
   if (hasYear && !hasCounty && n <= 10) {
     return { kind: 'line-smooth-filled', title: intentTitle(intent) };
   }
+  // Explicit trend/timeseries keywords → line even without year column
+  if (i.includes('trend') || i.includes('over years') || i.includes('2021') || i.includes('timeseries')) {
+    return { kind: 'line-area', title: intentTitle(intent) };
+  }
 
-  // ── 3. Explicit ranking keywords — BEFORE scatter ──────────
+  // ── 3. Explicit ranking keywords — horizontal bar ──────────
   const isRanking =
     i.includes('top ') || i.includes('bottom ') ||
     i.includes('highest') || i.includes('lowest') ||
@@ -123,7 +127,27 @@ export function classifyChart(
     return { kind: 'bar-horizontal', title: intentTitle(intent) };
   }
 
-  // ── 4. All counties (≥ 30 rows) ────────────────────────────
+  // ── 4. Comparison: ≤5 items (bar-horizontal or pie) ────────
+  // "compare X to Y", "X vs Y", "X and Y" — 2–5 counties side by side
+  const isCompare =
+    i.includes('compare') || i.includes(' vs ') || i.includes(' and ') ||
+    i.includes('versus') || i.includes('between');
+  if (isCompare || (n >= 2 && n <= 5)) {
+    // 2 counties, single metric → pie for share comparison
+    if (n === 2 && numKeys.length === 1) {
+      return { kind: 'pie', title: intentTitle(intent) };
+    }
+    // 2–5 items → horizontal bar (clear, labelled, easy to read)
+    if (n <= 5) {
+      return { kind: 'bar-horizontal', title: intentTitle(intent) };
+    }
+    // 6–10 items with compare intent → horizontal bar still beats radar
+    if (n <= 10) {
+      return { kind: 'bar-horizontal', title: intentTitle(intent) };
+    }
+  }
+
+  // ── 5. All counties (≥ 30 rows) ────────────────────────────
   if (n >= 30) {
     const pctK = numKeys.filter(k => k.startsWith('pct_'));
     if (pctK.length >= 2) return { kind: 'bar-stacked-pct', title: intentTitle(intent) };
@@ -131,48 +155,40 @@ export function classifyChart(
     return { kind: 'bar-gradient', title: intentTitle(intent) };
   }
 
-  // ── 5. Percentage breakdowns ───────────────────────────────
+  // ── 6. Percentage breakdowns ───────────────────────────────
   const pctKeys = numKeys.filter(k => k.startsWith('pct_'));
   if (pctKeys.length >= 2) return { kind: 'bar-stacked-pct', title: intentTitle(intent) };
   if (pctKeys.length === 1 && n <= 20) return { kind: 'donut', title: intentTitle(intent) };
 
-  // ── 6. Explicitly requested scatter / correlation ──────────
+  // ── 7. Explicitly requested scatter / correlation ──────────
   if (i.includes('scatter') || i.includes('correlat') || i.includes('against')) {
     return { kind: 'scatter-labeled', title: intentTitle(intent) };
   }
 
-  // ── 7. Bubble — area + population ─────────────────────────
+  // ── 8. Bubble — area + population ─────────────────────────
   if (numKeys.includes('county_area_km2') || (i.includes('area') && i.includes('population'))) {
     return { kind: 'bubble', title: intentTitle(intent) };
   }
 
-  // ── 8. Sex ratio distribution → histogram ─────────────────
+  // ── 9. Sex ratio distribution → histogram ─────────────────
   if (i.includes('sex ratio') || i.includes('sex_ratio')) {
     return { kind: 'histogram', title: intentTitle(intent) };
   }
 
-  // ── 9. Growth / change ─────────────────────────────────────
+  // ── 10. Growth / change ─────────────────────────────────────
   if (i.includes('growth') || i.includes('change') || i.includes('delta')) {
     return { kind: 'bar-negative', title: intentTitle(intent) };
   }
 
-  // ── 10. Dependency / elderly / children small N → nightingale
-  if ((i.includes('depend') || i.includes('elderly') || i.includes('child')) && n <= 12) {
-    return { kind: 'nightingale', title: intentTitle(intent) };
-  }
-
-  // ── 11. County comparison (2-5 counties, many metrics) → radar
-  if (n >= 2 && n <= 6 && numKeys.length >= 3) {
-    return { kind: 'radar-multi', title: intentTitle(intent) };
-  }
-
-  // ── 12. Filter results (counties that exceed threshold) → horizontal bar
+  // ── 11. Filter results (counties that exceed threshold) → horizontal bar
   if (i.includes('where') || i.includes('exceed') || i.includes('above') || i.includes('below') || i.includes('over')) {
     return { kind: 'bar-horizontal', title: intentTitle(intent) };
   }
 
-  // ── 13. Funnel for small ordered single-metric list ────────
-  if (n <= 10 && numKeys.length === 1) return { kind: 'funnel', title: intentTitle(intent) };
+  // ── 12. Small N (≤ 12) with single metric → bar-horizontal (not funnel/dot)
+  if (n <= 12 && numKeys.length === 1) {
+    return { kind: 'bar-horizontal', title: intentTitle(intent) };
+  }
 
   // Default
   return { kind: 'bar-horizontal', title: intentTitle(intent) };
